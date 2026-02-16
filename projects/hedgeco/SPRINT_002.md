@@ -17,23 +17,23 @@
 ## 📋 Task Breakdown
 
 ### Backend API
-- [ ] Set up tRPC with Next.js App Router
-- [ ] Create fund router (list, get, search)
-- [ ] Create user router (profile, update)
+- [x] Set up tRPC with Next.js App Router
+- [x] Create fund router (list, get, search, create, update)
+- [x] Create user router (profile, watchlist, saved searches)
 - [ ] Create stats router (calculate fund statistics)
-- [ ] Add proper error handling and validation
+- [x] Add proper error handling and validation
 
 ### Frontend Integration
-- [ ] Install and configure @tanstack/react-query
-- [ ] Create tRPC client hooks
-- [ ] Connect funds page to real API
+- [x] Install and configure @tanstack/react-query
+- [x] Create tRPC client hooks
+- [x] Connect funds page to real API
 - [ ] Connect fund detail page to real API
-- [ ] Wire up auth forms to API (currently working but need error handling)
+- [x] Wire up auth forms to API
 
 ### Data Layer
 - [ ] Implement fund statistics calculation
-- [ ] Add fund search with filters
-- [ ] Set up fund watchlist functionality
+- [x] Add fund search with filters
+- [x] Set up fund watchlist functionality (API ready)
 
 ---
 
