@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
 import {
   TrendingUp,
   Shield,
@@ -65,40 +66,47 @@ const features = [
   },
 ];
 
-const fundTypes = [
-  { name: "Hedge Funds", count: "1,200+", href: "/funds?type=HEDGE_FUND" },
-  { name: "Private Equity", count: "450+", href: "/funds?type=PRIVATE_EQUITY" },
-  { name: "Venture Capital", count: "380+", href: "/funds?type=VENTURE_CAPITAL" },
-  { name: "Real Estate", count: "220+", href: "/funds?type=REAL_ESTATE" },
-  { name: "Crypto Funds", count: "180+", href: "/funds?type=CRYPTO" },
-  { name: "SPVs", count: "150+", href: "/funds?type=SPV" },
+const defaultFundTypes = [
+  { name: "Hedge Funds", count: "1,200+", href: "/funds?type=HEDGE_FUND", type: "HEDGE_FUND" },
+  { name: "Private Equity", count: "450+", href: "/funds?type=PRIVATE_EQUITY", type: "PRIVATE_EQUITY" },
+  { name: "Venture Capital", count: "380+", href: "/funds?type=VENTURE_CAPITAL", type: "VENTURE_CAPITAL" },
+  { name: "Real Estate", count: "220+", href: "/funds?type=REAL_ESTATE", type: "REAL_ESTATE" },
+  { name: "Crypto Funds", count: "180+", href: "/funds?type=CRYPTO", type: "CRYPTO" },
+  { name: "SPVs", count: "150+", href: "/funds?type=SPV", type: "SPV" },
 ];
 
-const featuredFunds = [
-  {
-    name: "Alpha Equity Partners",
-    strategy: "Long/Short Equity",
-    aum: "$850M",
-    ytdReturn: "+18.7%",
-    slug: "alpha-equity-partners",
-  },
-  {
-    name: "Quantum Alpha Fund",
-    strategy: "Quantitative",
-    aum: "$2.3B",
-    ytdReturn: "+14.2%",
-    slug: "quantum-alpha-fund",
-  },
-  {
-    name: "Crescent Growth Fund III",
-    strategy: "Growth Equity",
-    aum: "$750M",
-    ytdReturn: "N/A",
-    slug: "crescent-growth-fund-iii",
-  },
-];
+function formatCurrency(amount: unknown): string {
+  if (amount === null || amount === undefined) return "N/A";
+  const num = Number(amount);
+  if (isNaN(num)) return "N/A";
+  if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
+  if (num >= 1e6) return `$${(num / 1e6).toFixed(0)}M`;
+  return `$${num.toLocaleString()}`;
+}
+
+function formatPercent(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
+  const num = Number(value);
+  if (isNaN(num)) return "N/A";
+  return `${num >= 0 ? "+" : ""}${(num * 100).toFixed(1)}%`;
+}
 
 export default function Home() {
+  // Fetch featured funds from API
+  const { data: featuredData } = trpc.fund.getFeatured.useQuery({ limit: 3 });
+  const { data: typeCounts } = trpc.fund.getTypeCounts.useQuery();
+
+  const featuredFunds = featuredData || [];
+  
+  // Merge API counts with default data
+  const fundTypes = defaultFundTypes.map(ft => {
+    const apiCount = typeCounts?.find(tc => tc.type === ft.type);
+    return {
+      ...ft,
+      count: apiCount ? `${apiCount.count}+` : ft.count,
+    };
+  });
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -224,29 +232,48 @@ export default function Home() {
             </Button>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {featuredFunds.map((fund) => (
-              <Link key={fund.slug} href={`/funds/${fund.slug}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg mb-1">{fund.name}</CardTitle>
-                        <CardDescription>{fund.strategy}</CardDescription>
+            {featuredFunds.length > 0 ? (
+              featuredFunds.map((fund) => (
+                <Link key={fund.id} href={`/funds/${fund.slug}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg mb-1">{fund.name}</CardTitle>
+                          <CardDescription>{fund.strategy}</CardDescription>
+                        </div>
+                        <Badge variant="secondary" className={`${
+                          fund.statistics?.ytdReturn && Number(fund.statistics.ytdReturn) >= 0
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-slate-100 text-slate-700"
+                        }`}>
+                          {formatPercent(fund.statistics?.ytdReturn)}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-                        {fund.ytdReturn}
-                      </Badge>
-                    </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">AUM</span>
+                        <span className="font-semibold text-slate-900">{formatCurrency(fund.aum)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              // Fallback to skeleton cards while loading
+              [1, 2, 3].map((i) => (
+                <Card key={i} className="h-full">
+                  <CardHeader>
+                    <div className="h-6 w-48 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-4 w-32 bg-slate-100 rounded animate-pulse mt-2" />
                   </CardHeader>
                   <CardContent>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">AUM</span>
-                      <span className="font-semibold text-slate-900">{fund.aum}</span>
-                    </div>
+                    <div className="h-4 w-full bg-slate-100 rounded animate-pulse" />
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
