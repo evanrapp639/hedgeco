@@ -41,7 +41,10 @@
 
 **Timeline estimate:** 30-42 weeks
 
-**Next:** Start development sprint — database schema, project scaffolding
+**Sprint 1:** ✅ COMPLETE (2026-02-16)
+- Full Prisma schema, auth system, 8 pages, builds clean
+
+**Next:** Sprint 2 — tRPC API, connect frontend forms, AI search
 
 ---
 
