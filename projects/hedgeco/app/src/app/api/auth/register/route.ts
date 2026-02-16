@@ -1,0 +1,155 @@
+// POST /api/auth/register - Create a new user account
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { hashPassword, generateTokenPair, setAuthCookies } from '@/lib/auth';
+import { UserRole } from '@prisma/client';
+import { z } from 'zod';
+
+// Validation schema
+const registerSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  role: z.enum(['INVESTOR', 'MANAGER', 'SERVICE_PROVIDER', 'NEWS_MEMBER']),
+  company: z.string().optional(),
+  title: z.string().optional(),
+  // Role-specific fields
+  investorType: z.string().optional(),
+  fundType: z.string().optional(),
+  category: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().url().optional().or(z.literal('')),
+  description: z.string().optional(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // Validate input
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'VALIDATION_ERROR', 
+            message: 'Invalid input',
+            details: result.error.flatten().fieldErrors,
+          } 
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = result.data;
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'EMAIL_EXISTS', 
+            message: 'An account with this email already exists' 
+          } 
+        },
+        { status: 409 }
+      );
+    }
+
+    // Hash password
+    const passwordHash = await hashPassword(data.password);
+
+    // Create user with profile
+    const user = await prisma.user.create({
+      data: {
+        email: data.email.toLowerCase(),
+        passwordHash,
+        role: data.role as UserRole,
+        profile: {
+          create: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            company: data.company,
+            title: data.title,
+            phone: data.phone,
+            investorType: data.investorType as "INDIVIDUAL" | "FAMILY_OFFICE" | "INSTITUTIONAL" | "FUND_OF_FUNDS" | "ENDOWMENT" | "PENSION" | "RIA" | "BANK" | "INSURANCE" | undefined,
+          },
+        },
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    // Create service provider record if applicable
+    if (data.role === 'SERVICE_PROVIDER' && data.company) {
+      await prisma.serviceProvider.create({
+        data: {
+          userId: user.id,
+          companyName: data.company,
+          slug: data.company.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          category: data.category || 'other',
+          description: data.description,
+          website: data.website || null,
+        },
+      });
+    }
+
+    // Generate tokens
+    const tokens = await generateTokenPair({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      accredited: user.profile?.accredited || false,
+    });
+
+    // Set cookies
+    await setAuthCookies(tokens.accessToken, tokens.refreshToken);
+
+    // Store refresh token in database
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: tokens.refreshToken.slice(-32), // Store partial hash for lookup
+        tokenFamily: tokens.tokenFamily,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          profile: {
+            firstName: user.profile?.firstName,
+            lastName: user.profile?.lastName,
+            company: user.profile?.company,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: { 
+          code: 'INTERNAL_ERROR', 
+          message: 'An error occurred during registration' 
+        } 
+      },
+      { status: 500 }
+    );
+  }
+}

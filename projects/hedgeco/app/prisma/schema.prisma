@@ -1,0 +1,866 @@
+// HedgeCo.Net v2 - Database Schema
+// Based on BACKEND_SPEC.md Section 3.3
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USERS & AUTHENTICATION
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+
+  // Status
+  emailVerified DateTime?
+  active        Boolean   @default(true)
+  locked        Boolean   @default(false)
+  lockedAt      DateTime?
+  lockedReason  String?
+
+  // Role & permissions
+  role          UserRole  @default(INVESTOR)
+
+  // Relationships
+  profile       Profile?
+  funds         Fund[]    @relation("FundManager")
+  serviceProvider ServiceProvider?
+
+  // Accreditation (for investors)
+  accreditationRequests AccreditationRequest[]
+
+  // Activity
+  sessions        Session[]
+  refreshTokens   RefreshToken[]
+  activities      UserActivity[]
+  savedSearches   SavedSearch[]
+
+  // Messaging
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageRecipient")
+
+  // Watchlist
+  watchlist       Watchlist[]
+
+  // Audit
+  auditLogs       AuditLog[]
+
+  // Timestamps
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email])
+  @@index([role, active])
+}
+
+enum UserRole {
+  INVESTOR
+  MANAGER
+  SERVICE_PROVIDER
+  NEWS_MEMBER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Profile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic info
+  firstName     String
+  lastName      String
+  displayName   String?
+  avatarUrl     String?
+
+  // Professional
+  company       String?
+  title         String?
+  phone         String?
+  linkedIn      String?
+
+  // Location
+  city          String?
+  state         String?
+  country       String?   @default("US")
+  timezone      String?   @default("America/New_York")
+
+  // Investor-specific
+  accredited           Boolean   @default(false)
+  accreditedAt         DateTime?
+  accreditationExpires DateTime?
+  investorType         InvestorType?
+
+  // AI Preferences (for recommendations)
+  preferences   Json?
+
+  // Notification preferences
+  emailNotifications Boolean @default(true)
+  marketingEmails    Boolean @default(false)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([accredited, accreditationExpires])
+}
+
+enum InvestorType {
+  INDIVIDUAL
+  FAMILY_OFFICE
+  INSTITUTIONAL
+  FUND_OF_FUNDS
+  ENDOWMENT
+  PENSION
+  RIA
+  BANK
+  INSURANCE
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userAgent    String?
+  ipAddress    String?
+  country      String?
+  city         String?
+
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash   String   @unique
+  tokenFamily String
+
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+
+  @@index([userId, tokenFamily])
+  @@index([tokenHash])
+}
+
+// ============================================================
+// ACCREDITATION
+// ============================================================
+
+model AccreditationRequest {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+
+  accreditationType AccreditationType
+
+  // Income-based
+  annualIncome      Decimal?            @db.Decimal(14, 2)
+  jointIncome       Boolean?
+  incomeYears       Int?
+
+  // Net worth-based
+  netWorth          Decimal?            @db.Decimal(14, 2)
+
+  // Professional-based
+  certifications    String[]
+  employerName      String?
+
+  // Entity-based
+  entityType        String?
+  entityName        String?
+
+  // Documents
+  documents         AccreditationDocument[]
+
+  // Status
+  status            AccreditationStatus @default(PENDING)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  reviewNotes       String?
+
+  // Expiration
+  expiresAt         DateTime?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([userId, status])
+}
+
+enum AccreditationType {
+  INCOME
+  NET_WORTH
+  PROFESSIONAL
+  ENTITY
+  QUALIFIED_PURCHASER
+}
+
+enum AccreditationStatus {
+  PENDING
+  UNDER_REVIEW
+  DOCUMENTS_REQUESTED
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model AccreditationDocument {
+  id           String               @id @default(cuid())
+  requestId    String
+  request      AccreditationRequest @relation(fields: [requestId], references: [id])
+
+  documentType String
+  fileName     String
+  fileUrl      String
+  fileHash     String
+  uploadedAt   DateTime             @default(now())
+
+  verified     Boolean              @default(false)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+}
+
+// ============================================================
+// FUNDS
+// ============================================================
+
+model Fund {
+  id              String     @id @default(cuid())
+
+  // Basic info
+  name            String
+  slug            String     @unique
+  type            FundType
+
+  // Strategy
+  strategy        String?
+  subStrategy     String?
+  investmentFocus String?
+
+  // Manager relationship
+  managerId       String
+  manager         User       @relation("FundManager", fields: [managerId], references: [id])
+
+  // Fund details
+  description     String?    @db.Text
+
+  // AUM tracking
+  aum             Decimal?   @db.Decimal(18, 2)
+  aumDate         DateTime?
+  aumHistory      AumHistory[]
+
+  // Key dates
+  inceptionDate   DateTime?
+  fundCloseDate   DateTime?
+
+  // Fees
+  managementFee   Decimal?   @db.Decimal(5, 4)
+  performanceFee  Decimal?   @db.Decimal(5, 4)
+  hurdleRate      Decimal?   @db.Decimal(5, 4)
+  highWaterMark   Boolean    @default(true)
+
+  // Terms
+  minInvestment   Decimal?   @db.Decimal(18, 2)
+  lockupPeriod    String?
+  redemptionTerms String?
+  redemptionGate  Decimal?   @db.Decimal(5, 4)
+
+  // Structure
+  legalStructure  String?
+  domicile        String?
+  regulator       String?
+
+  // Location (manager office)
+  country         String?
+  state           String?
+  city            String?
+
+  // Status & visibility
+  status          FundStatus @default(DRAFT)
+  visible         Boolean    @default(false)
+  featured        Boolean    @default(false)
+
+  // Performance data
+  returns         FundReturn[]
+  statistics      FundStatistics?
+
+  // Benchmarks
+  primaryBenchmark   String?
+  secondaryBenchmark String?
+
+  // Documents
+  documents       FundDocument[]
+
+  // Contact history
+  inquiries       FundInquiry[]
+
+  // Watchlist
+  watchedBy       Watchlist[]
+
+  // Timestamps
+  approvedAt      DateTime?
+  approvedBy      String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([type, strategy])
+  @@index([status, visible])
+  @@index([managerId])
+  @@index([inceptionDate])
+  @@index([aum])
+}
+
+enum FundType {
+  HEDGE_FUND
+  PRIVATE_EQUITY
+  VENTURE_CAPITAL
+  REAL_ESTATE
+  CRYPTO
+  SPV
+  FUND_OF_FUNDS
+  CREDIT
+  INFRASTRUCTURE
+}
+
+enum FundStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+  CLOSED
+}
+
+model FundReturn {
+  id             String   @id @default(cuid())
+  fundId         String
+  fund           Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  year           Int
+  month          Int
+
+  // Returns (stored as decimals, e.g., 0.0523 = 5.23%)
+  netReturn      Decimal  @db.Decimal(10, 6)
+  grossReturn    Decimal? @db.Decimal(10, 6)
+
+  // Calculated fields (updated by stats engine)
+  ytdReturn      Decimal? @db.Decimal(12, 6)
+  trailingReturn Decimal? @db.Decimal(12, 6)
+
+  // AUM at time of return
+  periodAum      Decimal? @db.Decimal(18, 2)
+
+  // Data quality
+  provisional    Boolean  @default(false)
+  source         String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([fundId, year, month])
+  @@index([fundId, year])
+  @@index([year, month])
+}
+
+model FundStatistics {
+  id              String    @id @default(cuid())
+  fundId          String    @unique
+  fund            Fund      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  // Return metrics
+  totalReturn     Decimal?  @db.Decimal(12, 6)
+  cagr            Decimal?  @db.Decimal(10, 6)
+  ytdReturn       Decimal?  @db.Decimal(10, 6)
+  oneYearReturn   Decimal?  @db.Decimal(10, 6)
+  threeYearReturn Decimal?  @db.Decimal(10, 6)
+  fiveYearReturn  Decimal?  @db.Decimal(10, 6)
+
+  // Risk metrics
+  volatility      Decimal?  @db.Decimal(10, 6)
+  sharpeRatio     Decimal?  @db.Decimal(8, 4)
+  sortinoRatio    Decimal?  @db.Decimal(8, 4)
+  calmarRatio     Decimal?  @db.Decimal(8, 4)
+
+  // Drawdown
+  maxDrawdown     Decimal?  @db.Decimal(10, 6)
+  maxDrawdownDate DateTime?
+  currentDrawdown Decimal?  @db.Decimal(10, 6)
+
+  // Distribution
+  bestMonth        Decimal? @db.Decimal(10, 6)
+  worstMonth       Decimal? @db.Decimal(10, 6)
+  avgMonthlyReturn Decimal? @db.Decimal(10, 6)
+  positiveMonths   Int?
+  negativeMonths   Int?
+  winRate          Decimal? @db.Decimal(5, 4)
+
+  // Correlation (vs benchmarks)
+  correlationSP500 Decimal? @db.Decimal(6, 4)
+  beta             Decimal? @db.Decimal(6, 4)
+  alpha            Decimal? @db.Decimal(10, 6)
+
+  // Skew & Kurtosis
+  skewness        Decimal?  @db.Decimal(8, 4)
+  kurtosis        Decimal?  @db.Decimal(8, 4)
+
+  // Calculation metadata
+  calculatedAt    DateTime  @default(now())
+  dataStartDate   DateTime?
+  dataEndDate     DateTime?
+  monthsOfData    Int?
+  riskFreeRate    Decimal?  @db.Decimal(6, 4)
+
+  updatedAt       DateTime  @updatedAt
+}
+
+model AumHistory {
+  id       String   @id @default(cuid())
+  fundId   String
+  fund     Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  asOfDate DateTime
+  aum      Decimal  @db.Decimal(18, 2)
+  source   String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([fundId, asOfDate])
+  @@index([fundId, asOfDate])
+}
+
+model FundDocument {
+  id           String             @id @default(cuid())
+  fundId       String
+  fund         Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  documentType FundDocumentType
+  title        String
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  fileHash     String
+
+  accessLevel  DocumentAccessLevel @default(ACCREDITED)
+
+  version      Int                @default(1)
+  previousId   String?
+
+  uploadedBy   String
+  uploadedAt   DateTime           @default(now())
+
+  @@index([fundId, documentType])
+}
+
+enum FundDocumentType {
+  FACTSHEET
+  PPM
+  DDQ
+  PERFORMANCE_REPORT
+  MARKETING_DECK
+  AUDITED_FINANCIALS
+  SUBSCRIPTION_DOCS
+  SIDE_LETTER
+  OTHER
+}
+
+enum DocumentAccessLevel {
+  PUBLIC
+  REGISTERED
+  ACCREDITED
+  NDA_REQUIRED
+  PRIVATE
+}
+
+// ============================================================
+// SERVICE PROVIDERS
+// ============================================================
+
+model ServiceProvider {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id])
+
+  companyName   String
+  slug          String         @unique
+
+  category      String
+  subcategories String[]
+
+  tagline       String?
+  description   String?        @db.Text
+
+  website       String?
+  phone         String?
+  email         String?
+
+  address       String?
+  address2      String?
+  city          String?
+  state         String?
+  postalCode    String?
+  country       String?        @default("US")
+
+  linkedIn      String?
+  twitter       String?
+
+  tier               ProviderTier   @default(BASIC)
+  tierStartedAt      DateTime?
+  tierExpiresAt      DateTime?
+  stripeCustomerId   String?
+  stripeSubscriptionId String?
+
+  status        ProviderStatus @default(PENDING)
+  visible       Boolean        @default(false)
+  featured      Boolean        @default(false)
+
+  testimonials  ProviderTestimonial[]
+
+  viewCount     Int            @default(0)
+  contactCount  Int            @default(0)
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([category])
+  @@index([status, visible])
+  @@index([tier])
+}
+
+enum ProviderTier {
+  BASIC
+  PROFESSIONAL
+  PREMIUM
+  FEATURED
+}
+
+enum ProviderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model ProviderTestimonial {
+  id            String          @id @default(cuid())
+  providerId    String
+  provider      ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  authorName    String
+  authorTitle   String?
+  authorCompany String?
+  content       String          @db.Text
+  rating        Int?
+
+  approved      Boolean         @default(false)
+  approvedAt    DateTime?
+
+  createdAt     DateTime        @default(now())
+}
+
+// ============================================================
+// CONFERENCES
+// ============================================================
+
+model Conference {
+  id              String           @id @default(cuid())
+
+  name            String
+  slug            String           @unique
+  description     String?          @db.Text
+
+  venue           String?
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  virtual         Boolean          @default(false)
+  virtualUrl      String?
+
+  startDate       DateTime
+  endDate         DateTime?
+  timezone        String?          @default("America/New_York")
+
+  registrationUrl String?
+  ticketCost      Decimal?         @db.Decimal(10, 2)
+  earlyBirdCost   Decimal?         @db.Decimal(10, 2)
+  earlyBirdDeadline DateTime?
+
+  organizer       String?
+  organizerEmail  String?
+  organizerPhone  String?
+  organizerUrl    String?
+
+  agenda          Json?
+  speakers        Json?
+  sponsors        Json?
+
+  status          ConferenceStatus @default(UPCOMING)
+  visible         Boolean          @default(true)
+  featured        Boolean          @default(false)
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([startDate, status])
+  @@index([city, country])
+}
+
+enum ConferenceStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// MESSAGING
+// ============================================================
+
+model Message {
+  id          String              @id @default(cuid())
+
+  senderId    String
+  sender      User                @relation("MessageSender", fields: [senderId], references: [id])
+
+  recipientId String
+  recipient   User                @relation("MessageRecipient", fields: [recipientId], references: [id])
+
+  threadId    String              @default(cuid())
+  parentId    String?
+
+  subject     String?
+  body        String              @db.Text
+  bodyHtml    String?             @db.Text
+
+  attachments MessageAttachment[]
+
+  read        Boolean             @default(false)
+  readAt      DateTime?
+  archived    Boolean             @default(false)
+  deleted     Boolean             @default(false)
+  deletedAt   DateTime?
+
+  relatedFundId String?
+
+  createdAt   DateTime            @default(now())
+
+  @@index([recipientId, read, archived])
+  @@index([senderId])
+  @@index([threadId])
+}
+
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+
+  createdAt DateTime @default(now())
+}
+
+model FundInquiry {
+  id         String        @id @default(cuid())
+
+  fundId     String
+  fund       Fund          @relation(fields: [fundId], references: [id])
+
+  investorId String
+
+  subject    String
+  message    String        @db.Text
+
+  status     InquiryStatus @default(PENDING)
+  respondedAt DateTime?
+  respondedBy String?
+
+  createdAt  DateTime      @default(now())
+
+  @@index([fundId, status])
+  @@index([investorId])
+}
+
+enum InquiryStatus {
+  PENDING
+  VIEWED
+  RESPONDED
+  ARCHIVED
+}
+
+// ============================================================
+// WATCHLIST
+// ============================================================
+
+model Watchlist {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fundId   String
+  fund     Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  notes    String?
+  addedAt  DateTime @default(now())
+
+  @@unique([userId, fundId])
+  @@index([userId])
+  @@index([fundId])
+}
+
+// ============================================================
+// AI & ACTIVITY TRACKING
+// ============================================================
+
+model UserActivity {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action     ActivityAction
+  entityType EntityType
+  entityId   String?
+
+  metadata   Json?
+
+  sessionId  String?
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime       @default(now())
+
+  @@index([userId, action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+enum ActivityAction {
+  VIEW
+  SEARCH
+  FILTER
+  CONTACT
+  SAVE
+  DOWNLOAD
+  SHARE
+  COMPARE
+}
+
+enum EntityType {
+  FUND
+  PROVIDER
+  CONFERENCE
+  DOCUMENT
+  SEARCH
+}
+
+model SavedSearch {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name           String
+
+  query          String?
+  filters        Json
+
+  alertEnabled   Boolean         @default(false)
+  alertFrequency AlertFrequency?
+  lastAlertAt    DateTime?
+  lastMatchCount Int?
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+enum AlertFrequency {
+  IMMEDIATELY
+  DAILY
+  WEEKLY
+}
+
+// ============================================================
+// AUDIT & SECURITY
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  ipAddress  String?
+  userAgent  String?
+
+  action     String
+  entityType String
+  entityId   String?
+
+  oldValue   Json?
+  newValue   Json?
+  metadata   Json?
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================
+// BACKGROUND JOBS
+// ============================================================
+
+model JobQueue {
+  id          String    @id @default(cuid())
+
+  queue       String
+  jobType     String
+
+  payload     Json
+
+  status      JobStatus @default(PENDING)
+  priority    Int       @default(0)
+
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?
+
+  scheduledAt DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([queue, status, priority, scheduledAt])
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
