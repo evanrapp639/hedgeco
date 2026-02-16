@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { trpc } from "@/lib/trpc";
 import {
   Search,
   SlidersHorizontal,
@@ -17,101 +18,8 @@ import {
   Calendar,
   Sparkles,
   X,
+  Loader2,
 } from "lucide-react";
-
-// Sample fund data (in real app, this would come from API)
-const sampleFunds = [
-  {
-    id: "1",
-    name: "Alpha Equity Partners",
-    slug: "alpha-equity-partners",
-    type: "HEDGE_FUND",
-    strategy: "Long/Short Equity",
-    subStrategy: "US Large Cap",
-    aum: 850000000,
-    ytdReturn: 0.187,
-    oneYearReturn: 0.2156,
-    sharpeRatio: 1.47,
-    inceptionDate: "2018-03-15",
-    city: "New York",
-    state: "NY",
-    country: "US",
-    minInvestment: 1000000,
-    featured: true,
-  },
-  {
-    id: "2",
-    name: "Quantum Alpha Fund",
-    slug: "quantum-alpha-fund",
-    type: "HEDGE_FUND",
-    strategy: "Quantitative",
-    subStrategy: "Statistical Arbitrage",
-    aum: 2300000000,
-    ytdReturn: 0.142,
-    oneYearReturn: 0.1823,
-    sharpeRatio: 2.12,
-    inceptionDate: "2015-09-01",
-    city: "San Francisco",
-    state: "CA",
-    country: "US",
-    minInvestment: 5000000,
-    featured: true,
-  },
-  {
-    id: "3",
-    name: "Crescent Growth Fund III",
-    slug: "crescent-growth-fund-iii",
-    type: "PRIVATE_EQUITY",
-    strategy: "Growth Equity",
-    subStrategy: "Technology",
-    aum: 750000000,
-    ytdReturn: null,
-    oneYearReturn: null,
-    sharpeRatio: null,
-    inceptionDate: "2023-06-01",
-    city: "Boston",
-    state: "MA",
-    country: "US",
-    minInvestment: 10000000,
-    featured: false,
-  },
-  {
-    id: "4",
-    name: "Digital Asset Opportunities",
-    slug: "digital-asset-opportunities",
-    type: "CRYPTO",
-    strategy: "Multi-Strategy",
-    subStrategy: "DeFi & Layer 1",
-    aum: 180000000,
-    ytdReturn: 0.342,
-    oneYearReturn: 0.567,
-    sharpeRatio: 0.89,
-    inceptionDate: "2021-01-15",
-    city: "San Francisco",
-    state: "CA",
-    country: "US",
-    minInvestment: 500000,
-    featured: false,
-  },
-  {
-    id: "5",
-    name: "Horizon Ventures Fund II",
-    slug: "horizon-ventures-fund-ii",
-    type: "VENTURE_CAPITAL",
-    strategy: "Early Stage",
-    subStrategy: "AI & Enterprise Software",
-    aum: 120000000,
-    ytdReturn: null,
-    oneYearReturn: null,
-    sharpeRatio: null,
-    inceptionDate: "2024-03-01",
-    city: "Boston",
-    state: "MA",
-    country: "US",
-    minInvestment: 2500000,
-    featured: false,
-  },
-];
 
 const fundTypes = [
   { value: "all", label: "All Types" },
@@ -135,15 +43,20 @@ const strategies = [
   { value: "Multi-Strategy", label: "Multi-Strategy" },
 ];
 
-function formatCurrency(amount: number): string {
-  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
-  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(0)}M`;
-  return `$${amount.toLocaleString()}`;
+function formatCurrency(amount: unknown): string {
+  if (amount === null || amount === undefined) return "N/A";
+  const num = Number(amount);
+  if (isNaN(num)) return "N/A";
+  if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
+  if (num >= 1e6) return `$${(num / 1e6).toFixed(0)}M`;
+  return `$${num.toLocaleString()}`;
 }
 
-function formatPercent(value: number | null): string {
-  if (value === null) return "N/A";
-  return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
+function formatPercent(value: unknown): string {
+  if (value === null || value === undefined) return "N/A";
+  const num = Number(value);
+  if (isNaN(num)) return "N/A";
+  return `${num >= 0 ? "+" : ""}${(num * 100).toFixed(1)}%`;
 }
 
 function getFundTypeLabel(type: string): string {
@@ -165,19 +78,24 @@ export default function FundsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedStrategy, setSelectedStrategy] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Filter funds based on current selections
-  const filteredFunds = sampleFunds.filter((fund) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      fund.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fund.strategy.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === "all" || fund.type === selectedType;
-    const matchesStrategy =
-      selectedStrategy === "all" || fund.strategy === selectedStrategy;
-    return matchesSearch && matchesType && matchesStrategy;
+  // Debounce search input
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    // Simple debounce
+    setTimeout(() => setDebouncedSearch(value), 300);
+  };
+
+  // Fetch funds using tRPC
+  const { data, isLoading, error } = trpc.fund.list.useQuery({
+    type: selectedType !== "all" ? (selectedType as "HEDGE_FUND" | "PRIVATE_EQUITY" | "VENTURE_CAPITAL" | "REAL_ESTATE" | "CRYPTO" | "SPV") : undefined,
+    strategy: selectedStrategy !== "all" ? selectedStrategy : undefined,
+    search: debouncedSearch || undefined,
+    limit: 20,
   });
+
+  const funds = data?.funds || [];
 
   const activeFilters =
     (selectedType !== "all" ? 1 : 0) + (selectedStrategy !== "all" ? 1 : 0);
@@ -191,7 +109,7 @@ export default function FundsPage() {
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Fund Database</h1>
               <p className="text-slate-600 mt-1">
-                Browse {sampleFunds.length.toLocaleString()}+ alternative investment funds
+                Browse alternative investment funds
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -210,7 +128,7 @@ export default function FundsPage() {
                 <Input
                   placeholder="Search funds by name, strategy, or manager..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -242,7 +160,6 @@ export default function FundsPage() {
                 <Button
                   variant="outline"
                   className="gap-2"
-                  onClick={() => setShowFilters(!showFilters)}
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   More Filters
@@ -281,6 +198,7 @@ export default function FundsPage() {
                     setSelectedType("all");
                     setSelectedStrategy("all");
                     setSearchQuery("");
+                    setDebouncedSearch("");
                   }}
                 >
                   Clear all
@@ -295,7 +213,7 @@ export default function FundsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <p className="text-slate-600">
-            Showing {filteredFunds.length} fund{filteredFunds.length !== 1 ? "s" : ""}
+            {isLoading ? "Loading..." : `Showing ${funds.length} fund${funds.length !== 1 ? "s" : ""}`}
           </p>
           <Select defaultValue="relevance">
             <SelectTrigger className="w-[180px]">
@@ -311,120 +229,144 @@ export default function FundsPage() {
           </Select>
         </div>
 
-        {/* Fund Cards */}
-        <div className="grid gap-4">
-          {filteredFunds.map((fund) => (
-            <Link key={fund.id} href={`/funds/${fund.slug}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    {/* Left: Fund Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {fund.name}
-                            </h3>
-                            {fund.featured && (
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                                Featured
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-3.5 w-3.5" />
-                              {getFundTypeLabel(fund.type)}
-                            </span>
-                            <span>{fund.strategy}</span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {fund.city}, {fund.state}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3.5 w-3.5" />
-                              Since {new Date(fund.inceptionDate).getFullYear()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          </div>
+        )}
 
-                    {/* Right: Stats */}
-                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-6 lg:gap-8">
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
-                          AUM
-                        </div>
-                        <div className="text-lg font-semibold text-slate-900">
-                          {formatCurrency(fund.aum)}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
-                          YTD
-                        </div>
-                        <div
-                          className={`text-lg font-semibold flex items-center justify-center gap-1 ${
-                            fund.ytdReturn === null
-                              ? "text-slate-400"
-                              : fund.ytdReturn >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {fund.ytdReturn !== null &&
-                            (fund.ytdReturn >= 0 ? (
-                              <TrendingUp className="h-4 w-4" />
-                            ) : (
-                              <TrendingDown className="h-4 w-4" />
-                            ))}
-                          {formatPercent(fund.ytdReturn)}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
-                          1 Year
-                        </div>
-                        <div
-                          className={`text-lg font-semibold ${
-                            fund.oneYearReturn === null
-                              ? "text-slate-400"
-                              : fund.oneYearReturn >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {formatPercent(fund.oneYearReturn)}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
-                          Sharpe
-                        </div>
-                        <div className="text-lg font-semibold text-slate-900">
-                          {fund.sharpeRatio?.toFixed(2) || "N/A"}
+        {/* Error State */}
+        {error && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <p className="text-red-600">Error loading funds: {error.message}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fund Cards */}
+        {!isLoading && !error && (
+          <div className="grid gap-4">
+            {funds.map((fund) => (
+              <Link key={fund.id} href={`/funds/${fund.slug}`}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      {/* Left: Fund Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-semibold text-slate-900">
+                                {fund.name}
+                              </h3>
+                              {fund.featured && (
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                  Featured
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-3.5 w-3.5" />
+                                {getFundTypeLabel(fund.type)}
+                              </span>
+                              {fund.strategy && <span>{fund.strategy}</span>}
+                              {fund.city && fund.state && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {fund.city}, {fund.state}
+                                </span>
+                              )}
+                              {fund.inceptionDate && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  Since {new Date(fund.inceptionDate).getFullYear()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
-                          Min Invest
+
+                      {/* Right: Stats */}
+                      <div className="flex flex-wrap lg:flex-nowrap items-center gap-6 lg:gap-8">
+                        <div className="text-center">
+                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            AUM
+                          </div>
+                          <div className="text-lg font-semibold text-slate-900">
+                            {formatCurrency(fund.aum)}
+                          </div>
                         </div>
-                        <div className="text-lg font-semibold text-slate-900">
-                          {formatCurrency(fund.minInvestment)}
+                        <div className="text-center">
+                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            YTD
+                          </div>
+                          <div
+                            className={`text-lg font-semibold flex items-center justify-center gap-1 ${
+                              !fund.statistics?.ytdReturn
+                                ? "text-slate-400"
+                                : Number(fund.statistics.ytdReturn) >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {fund.statistics?.ytdReturn !== null && fund.statistics?.ytdReturn !== undefined &&
+                              (Number(fund.statistics.ytdReturn) >= 0 ? (
+                                <TrendingUp className="h-4 w-4" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4" />
+                              ))}
+                            {formatPercent(fund.statistics?.ytdReturn)}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            1 Year
+                          </div>
+                          <div
+                            className={`text-lg font-semibold ${
+                              !fund.statistics?.oneYearReturn
+                                ? "text-slate-400"
+                                : Number(fund.statistics.oneYearReturn) >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {formatPercent(fund.statistics?.oneYearReturn)}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            Sharpe
+                          </div>
+                          <div className="text-lg font-semibold text-slate-900">
+                            {fund.statistics?.sharpeRatio 
+                              ? Number(fund.statistics.sharpeRatio).toFixed(2) 
+                              : "N/A"}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            Min Invest
+                          </div>
+                          <div className="text-lg font-semibold text-slate-900">
+                            {formatCurrency(fund.minInvestment)}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {filteredFunds.length === 0 && (
+        {!isLoading && !error && funds.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <Search className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -438,6 +380,7 @@ export default function FundsPage() {
                   setSelectedType("all");
                   setSelectedStrategy("all");
                   setSearchQuery("");
+                  setDebouncedSearch("");
                 }}
               >
                 Clear all filters
@@ -446,22 +389,12 @@ export default function FundsPage() {
           </Card>
         )}
 
-        {/* Pagination placeholder */}
-        {filteredFunds.length > 0 && (
+        {/* Load More */}
+        {!isLoading && data?.nextCursor && (
           <div className="flex justify-center mt-8">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" className="bg-blue-50">
-                1
-              </Button>
-              <Button variant="outline">2</Button>
-              <Button variant="outline">3</Button>
-              <span className="px-2 text-slate-400">...</span>
-              <Button variant="outline">10</Button>
-              <Button variant="outline">Next</Button>
-            </div>
+            <Button variant="outline">
+              Load More
+            </Button>
           </div>
         )}
       </div>
