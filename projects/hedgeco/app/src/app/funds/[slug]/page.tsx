@@ -13,8 +13,6 @@ import {
   Building2,
   MapPin,
   Calendar,
-  TrendingUp,
-  TrendingDown,
   Users,
   FileText,
   MessageSquare,
@@ -25,6 +23,9 @@ import {
   ExternalLink,
   Loader2,
 } from "lucide-react";
+import { StatsCard } from "@/components/fund/StatsCard";
+import { PerformanceChart } from "@/components/fund/PerformanceChart";
+import { ReturnTable } from "@/components/fund/ReturnTable";
 
 function formatCurrency(amount: unknown): string {
   if (amount === null || amount === undefined) return "N/A";
@@ -162,58 +163,18 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Key Stats */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <div className="text-sm text-slate-500 mb-1">AUM</div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {formatCurrency(fund.aum)}
-                    </div>
-                    {fund.aumDate && (
-                      <div className="text-xs text-slate-400">
-                        as of {new Date(fund.aumDate).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500 mb-1">YTD Return</div>
-                    <div
-                      className={`text-2xl font-bold flex items-center gap-1 ${
-                        fund.statistics?.ytdReturn
-                          ? Number(fund.statistics.ytdReturn) >= 0 ? "text-green-600" : "text-red-600"
-                          : "text-slate-400"
-                      }`}
-                    >
-                      {fund.statistics?.ytdReturn && (
-                        Number(fund.statistics.ytdReturn) >= 0 ? (
-                          <TrendingUp className="h-5 w-5" />
-                        ) : (
-                          <TrendingDown className="h-5 w-5" />
-                        )
-                      )}
-                      {formatPercent(fund.statistics?.ytdReturn)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500 mb-1">CAGR</div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {formatPercent(fund.statistics?.cagr)}
-                    </div>
-                    <div className="text-xs text-slate-400">Since inception</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500 mb-1">Sharpe Ratio</div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {fund.statistics?.sharpeRatio 
-                        ? Number(fund.statistics.sharpeRatio).toFixed(2) 
-                        : "N/A"}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Key Stats - Enhanced StatsCard Component */}
+            <StatsCard
+              aum={fund.aum}
+              aumDate={fund.aumDate}
+              statistics={fund.statistics}
+            />
+
+            {/* Performance Chart */}
+            <PerformanceChart
+              fundName={fund.name}
+              benchmarkName={fund.primaryBenchmark || "S&P 500"}
+            />
 
             {/* Tabs */}
             <Tabs defaultValue="overview">
@@ -295,6 +256,9 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
               </TabsContent>
 
               <TabsContent value="statistics" className="mt-4 space-y-6">
+                {/* Monthly Returns Table */}
+                <ReturnTable />
+
                 {/* Risk Metrics */}
                 <Card>
                   <CardHeader>
