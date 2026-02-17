@@ -26,6 +26,8 @@ import {
 import { StatsCard } from "@/components/fund/StatsCard";
 import { PerformanceChart } from "@/components/fund/PerformanceChart";
 import { ReturnTable } from "@/components/fund/ReturnTable";
+import { FollowButton } from "@/components/social/FollowButton";
+import { FollowerCount } from "@/components/social/FollowerCount";
 
 function formatCurrency(amount: unknown): string {
   if (amount === null || amount === undefined) return "N/A";
@@ -140,8 +142,17 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
                 )}
               </div>
             </div>
+            {/* Follower count */}
+            <FollowerCount count={1247} className="mb-2 lg:mb-0" />
+            
             {/* Action buttons - full width on mobile */}
             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <FollowButton
+                entityId={fund.id}
+                entityType="fund"
+                size="sm"
+                className="flex-1 lg:flex-none min-h-[44px]"
+              />
               <Button variant="outline" size="sm" className="flex-1 lg:flex-none min-h-[44px]">
                 <Star className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Add to </span>Watchlist
@@ -414,10 +425,18 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
                   </div>
                 </div>
                 <div className="text-sm text-slate-600 mb-4">{fund.manager.profile?.company}</div>
-                <Button className="w-full">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Contact Manager
-                </Button>
+                <div className="flex gap-2">
+                  <FollowButton
+                    entityId={fund.manager.id}
+                    entityType="manager"
+                    variant="outline"
+                    className="flex-1"
+                  />
+                  <Button className="flex-1">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Contact
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

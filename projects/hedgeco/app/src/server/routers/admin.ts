@@ -258,10 +258,10 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: 'UPDATE_USER_ROLE',
+          action: 'PERMISSION_CHANGE',
           entityType: 'USER',
           entityId: input.userId,
-          newValue: { role: input.role },
+          newValues: { role: input.role },
         },
       });
 
@@ -317,7 +317,7 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: `USER_${input.action.toUpperCase()}`,
+          action: 'UPDATE',
           entityType: 'USER',
           entityId: input.userId,
           metadata: { reason: input.reason },
@@ -369,10 +369,10 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: 'DELETE_USER',
+          action: 'DELETE',
           entityType: 'USER',
           entityId: input.userId,
-          oldValue: { email: user.email },
+          oldValues: { email: user.email },
         },
       });
 
@@ -531,7 +531,7 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: 'APPROVE_FUND',
+          action: 'UPDATE',
           entityType: 'FUND',
           entityId: input.fundId,
           metadata: { notes: input.notes },
@@ -576,7 +576,7 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: 'REJECT_FUND',
+          action: 'UPDATE',
           entityType: 'FUND',
           entityId: input.fundId,
           metadata: { reason: input.reason },
@@ -610,10 +610,10 @@ export const adminRouter = router({
       await ctx.prisma.auditLog.create({
         data: {
           userId: ctx.user.sub,
-          action: 'UPDATE_FUND_STATUS',
+          action: 'UPDATE',
           entityType: 'FUND',
           entityId: input.fundId,
-          newValue: { status: input.status, visible: input.visible },
+          newValues: { status: input.status, visible: input.visible },
         },
       });
 

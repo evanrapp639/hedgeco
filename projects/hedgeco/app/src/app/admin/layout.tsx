@@ -15,6 +15,7 @@ import {
   Shield,
   ChevronRight,
   Activity,
+  BarChart3,
 } from "lucide-react";
 
 // Admin sidebar navigation items
@@ -25,6 +26,11 @@ const sidebarNavItems = [
     icon: LayoutDashboard,
   },
   {
+    title: "Analytics",
+    href: "/admin/analytics",
+    icon: TrendingUp,
+  },
+  {
     title: "Users",
     href: "/admin/users",
     icon: Users,
@@ -32,7 +38,7 @@ const sidebarNavItems = [
   {
     title: "Funds",
     href: "/admin/funds",
-    icon: TrendingUp,
+    icon: Building2,
   },
   {
     title: "Service Providers",

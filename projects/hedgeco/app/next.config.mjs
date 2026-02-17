@@ -1,5 +1,49 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Security headers configuration
+  // Note: Additional headers are set via middleware.ts
+  // These are backup headers for static assets and cases where middleware doesn't run
+  async headers() {
+    return [
+      {
+        // Apply to all routes
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+        ],
+      },
+      {
+        // Stricter headers for API routes
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, max-age=0',
+          },
+        ],
+      },
+    ];
+  },
+
   // Image optimization configuration
   images: {
     // Allow remote images from common avatar/CDN sources

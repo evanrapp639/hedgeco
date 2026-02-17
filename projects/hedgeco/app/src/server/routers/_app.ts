@@ -18,6 +18,11 @@ import { analyticsRouter } from './analytics';
 import { notificationRouter } from './notification';
 import { documentRouter } from './document';
 import { savedSearchRouter } from './savedSearch';
+import { followRouter } from './follow';
+import { adminAnalyticsRouter } from './adminAnalytics';
+import { crmRouter } from './crm';
+import { activityRouter } from './activity';
+import { comparisonRouter } from './comparison';
 
 export const appRouter = router({
   fund: fundRouter,
@@ -37,6 +42,11 @@ export const appRouter = router({
   notification: notificationRouter,
   document: documentRouter,
   savedSearch: savedSearchRouter,
+  follow: followRouter,
+  adminAnalytics: adminAnalyticsRouter,
+  crm: crmRouter,
+  activity: activityRouter,
+  comparison: comparisonRouter,
 });
 
 // Export type definition for client

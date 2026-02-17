@@ -23,6 +23,8 @@ import {
   Share2,
   Check,
 } from "lucide-react";
+import { FollowButton } from "@/components/social/FollowButton";
+import { FollowerCount } from "@/components/social/FollowerCount";
 
 // Mock data - in production would fetch from API
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,15 +209,23 @@ export default function ProviderDetailPage() {
                 </div>
               </div>
               
-              <div className="flex gap-2 shrink-0">
-                <Button variant="outline" size="sm">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-                <Button size="sm">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Contact
-                </Button>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <FollowerCount count={892} size="sm" />
+                <div className="flex gap-2">
+                  <FollowButton
+                    entityId={provider.id}
+                    entityType="provider"
+                    size="sm"
+                  />
+                  <Button variant="outline" size="sm">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button size="sm">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Contact
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
