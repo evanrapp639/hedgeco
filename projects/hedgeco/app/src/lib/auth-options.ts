@@ -185,9 +185,9 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub!;
-        session.user.role = token.role;
-        session.user.status = token.status;
-        session.user.accredited = token.accredited;
+        session.user.role = token.role as UserRole;
+        session.user.status = token.status as UserStatus;
+        session.user.accredited = Boolean(token.accredited);
       }
       return session;
     },

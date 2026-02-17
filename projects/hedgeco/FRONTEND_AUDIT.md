@@ -552,7 +552,7 @@ Uses Tailwind defaults:
 ### Login
 1. User visits protected page (e.g., `/funds/search.php`)
 2. Redirected to `/sign-in.php` with `ref` parameter
-3. Login with email/password (no social auth)
+3. Login with email/password OR Google OAuth
 4. After login, redirected to original URL
 
 ### Registration
@@ -571,7 +571,7 @@ Uses Tailwind defaults:
 
 ## 📋 Additional Notes
 
-1. **No Google OAuth** - Only email/password authentication
+1. **Google OAuth available** - Sign-in page has "Sign in with Google" option
 2. **Admin approval required** for new registrations
 3. **Tailwind CDN** in production (warning in console)
 4. **Some 404 errors** for service provider icons
