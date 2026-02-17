@@ -51,7 +51,8 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 /**
- * Protected procedure - requires authentication and approved status
+ * Protected procedure - requires authentication only (no verification requirements)
+ * Use for basic authenticated operations like updating profile
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
@@ -61,10 +62,10 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
   
-  // Check user approval status from database
+  // Check basic account status
   const user = await ctx.prisma.user.findUnique({
     where: { id: ctx.user.sub },
-    select: { status: true, locked: true, active: true },
+    select: { locked: true, active: true },
   });
   
   if (!user) {
@@ -88,26 +89,66 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
   
-  if (user.status === 'PENDING') {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Your account is pending admin approval. Please check back later.',
-    });
-  }
-  
-  if (user.status === 'REJECTED') {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Your account application was not approved. Please contact support.',
-    });
-  }
-  
   return next({
     ctx: {
       ...ctx,
-      user: ctx.user, // user is now non-null
+      user: ctx.user,
     },
   });
+});
+
+/**
+ * Verified procedure - requires email verification (Step 1)
+ * Use for operations that require verified email but not accredited status
+ */
+export const verifiedProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const user = await ctx.prisma.user.findUnique({
+    where: { id: ctx.user.sub },
+    select: { emailVerified: true },
+  });
+  
+  if (!user?.emailVerified) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Please verify your email address to access this resource.',
+    });
+  }
+  
+  return next({ ctx });
+});
+
+/**
+ * Accredited procedure - requires BOTH email verification AND admin approval (Step 1 + Step 2)
+ * Use for accessing full fund/SPV details
+ */
+export const accreditedProcedure = verifiedProcedure.use(async ({ ctx, next }) => {
+  const user = await ctx.prisma.user.findUnique({
+    where: { id: ctx.user.sub },
+    select: { accreditedStatus: true },
+  });
+  
+  if (!user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'User not found',
+    });
+  }
+  
+  if (user.accreditedStatus === 'PENDING') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your accredited investor status is pending admin approval. You can view limited fund information.',
+    });
+  }
+  
+  if (user.accreditedStatus === 'REJECTED') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your accredited investor application was not approved. Please contact support.',
+    });
+  }
+  
+  return next({ ctx });
 });
 
 /**

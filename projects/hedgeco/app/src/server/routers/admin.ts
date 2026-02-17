@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { router, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { UserRole, FundStatus, UserStatus } from '@prisma/client';
+import { UserRole, FundStatus, AccreditedStatus } from '@prisma/client';
 
 export const adminRouter = router({
   /**
@@ -21,7 +21,7 @@ export const adminRouter = router({
     ] = await Promise.all([
       ctx.prisma.user.count(),
       ctx.prisma.user.count({ where: { emailVerified: null } }),
-      ctx.prisma.user.count({ where: { status: 'PENDING' } }), // Users awaiting admin approval
+      ctx.prisma.user.count({ where: { accreditedStatus: 'PENDING' } }), // Users awaiting accredited approval
       ctx.prisma.fund.count(),
       ctx.prisma.fund.count({ where: { status: 'PENDING_REVIEW' } }),
       ctx.prisma.serviceProvider.count(),
@@ -96,7 +96,7 @@ export const adminRouter = router({
         search: z.string().optional(),
         role: z.nativeEnum(UserRole).optional(),
         status: z.enum(['active', 'pending', 'locked']).optional(),
-        approvalStatus: z.nativeEnum(UserStatus).optional(), // Filter by approval status
+        accreditedStatus: z.nativeEnum(AccreditedStatus).optional(), // Filter by accredited status
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
         sortBy: z.enum(['createdAt', 'email', 'lastLoginAt']).default('createdAt'),
@@ -104,7 +104,7 @@ export const adminRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { search, role, status, approvalStatus, page, limit, sortBy, sortOrder } = input;
+      const { search, role, status, accreditedStatus, page, limit, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
       // Build where clause
@@ -138,9 +138,9 @@ export const adminRouter = router({
         }
       }
 
-      // Filter by approval status (PENDING, APPROVED, REJECTED)
-      if (approvalStatus) {
-        where.status = approvalStatus;
+      // Filter by accredited investor status (PENDING, APPROVED, REJECTED)
+      if (accreditedStatus) {
+        where.accreditedStatus = accreditedStatus;
       }
 
       const [users, total] = await Promise.all([
@@ -150,9 +150,9 @@ export const adminRouter = router({
             id: true,
             email: true,
             role: true,
-            status: true, // Include approval status
-            statusReason: true,
-            statusChangedAt: true,
+            accreditedStatus: true, // Accredited investor status
+            accreditedReason: true,
+            accreditedChangedAt: true,
             emailVerified: true,
             active: true,
             locked: true,
@@ -396,11 +396,13 @@ export const adminRouter = router({
   // ============================================================
 
   /**
-   * Get pending users awaiting approval
+   * Get users pending accredited investor approval
+   * These are users who have verified their email but need admin approval for accredited status
    */
-  getPendingUsers: adminProcedure
+  getPendingAccreditedUsers: adminProcedure
     .input(
       z.object({
+        emailVerifiedOnly: z.boolean().default(true), // Only show users who verified email
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
         sortBy: z.enum(['createdAt', 'email']).default('createdAt'),
@@ -408,16 +410,26 @@ export const adminRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { page, limit, sortBy, sortOrder } = input;
+      const { emailVerifiedOnly, page, limit, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
-      const [users, total] = await Promise.all([
+      const where: Record<string, unknown> = { 
+        accreditedStatus: 'PENDING',
+      };
+      
+      // Optionally filter to only show users who have completed email verification
+      if (emailVerifiedOnly) {
+        where.emailVerified = { not: null };
+      }
+
+      const [users, total, unverifiedCount] = await Promise.all([
         ctx.prisma.user.findMany({
-          where: { status: 'PENDING' },
+          where,
           select: {
             id: true,
             email: true,
             role: true,
+            emailVerified: true,
             createdAt: true,
             profile: {
               select: {
@@ -427,6 +439,7 @@ export const adminRouter = router({
                 title: true,
                 phone: true,
                 avatarUrl: true,
+                investorType: true,
               },
             },
             accounts: {
@@ -439,18 +452,27 @@ export const adminRouter = router({
           skip,
           take: limit,
         }),
-        ctx.prisma.user.count({ where: { status: 'PENDING' } }),
+        ctx.prisma.user.count({ where }),
+        // Count users pending accreditation who haven't verified email yet
+        ctx.prisma.user.count({ 
+          where: { 
+            accreditedStatus: 'PENDING',
+            emailVerified: null,
+          } 
+        }),
       ]);
 
-      // Transform to include OAuth provider info
-      const usersWithOAuth = users.map(user => ({
+      // Transform to include OAuth provider info and verification status
+      const usersWithDetails = users.map(user => ({
         ...user,
         isOAuthUser: user.accounts.length > 0,
         oauthProviders: user.accounts.map(a => a.provider),
+        isEmailVerified: !!user.emailVerified,
       }));
 
       return {
-        users: usersWithOAuth,
+        users: usersWithDetails,
+        unverifiedCount, // Users still waiting to verify email
         pagination: {
           page,
           limit,
@@ -461,9 +483,10 @@ export const adminRouter = router({
     }),
 
   /**
-   * Approve a pending user
+   * Approve a user's accredited investor status
+   * User must have verified their email first (Step 1)
    */
-  approveUser: adminProcedure
+  approveAccreditedStatus: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -483,25 +506,34 @@ export const adminRouter = router({
         });
       }
 
-      if (user.status !== 'PENDING') {
+      // Check if email is verified (Step 1 must be completed)
+      if (!user.emailVerified) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: `User is not pending approval. Current status: ${user.status}`,
+          message: 'User has not verified their email yet. Email verification is required before accreditation approval.',
+        });
+      }
+
+      if (user.accreditedStatus !== 'PENDING') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `User is not pending accreditation. Current status: ${user.accreditedStatus}`,
         });
       }
 
       const updatedUser = await ctx.prisma.user.update({
         where: { id: input.userId },
         data: {
-          status: 'APPROVED',
-          statusReason: input.notes,
-          statusChangedAt: new Date(),
-          statusChangedBy: ctx.user.sub,
+          accreditedStatus: 'APPROVED',
+          accreditedReason: input.notes,
+          accreditedChangedAt: new Date(),
+          accreditedChangedBy: ctx.user.sub,
         },
         select: {
           id: true,
           email: true,
-          status: true,
+          accreditedStatus: true,
+          emailVerified: true,
           profile: {
             select: { firstName: true, lastName: true },
           },
@@ -515,8 +547,8 @@ export const adminRouter = router({
           action: 'UPDATE',
           entityType: 'USER',
           entityId: input.userId,
-          newValues: { status: 'APPROVED' },
-          metadata: { notes: input.notes, action: 'APPROVE_USER' },
+          newValues: { accreditedStatus: 'APPROVED' },
+          metadata: { notes: input.notes, action: 'APPROVE_ACCREDITED_STATUS' },
         },
       });
 
@@ -525,14 +557,14 @@ export const adminRouter = router({
       return {
         success: true,
         user: updatedUser,
-        message: `User ${updatedUser.email} has been approved`,
+        message: `User ${updatedUser.email} has been approved as an accredited investor`,
       };
     }),
 
   /**
-   * Reject a pending user
+   * Reject a user's accredited investor status
    */
-  rejectUser: adminProcedure
+  rejectAccreditedStatus: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -551,25 +583,25 @@ export const adminRouter = router({
         });
       }
 
-      if (user.status !== 'PENDING') {
+      if (user.accreditedStatus !== 'PENDING') {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: `User is not pending approval. Current status: ${user.status}`,
+          message: `User is not pending accreditation. Current status: ${user.accreditedStatus}`,
         });
       }
 
       const updatedUser = await ctx.prisma.user.update({
         where: { id: input.userId },
         data: {
-          status: 'REJECTED',
-          statusReason: input.reason,
-          statusChangedAt: new Date(),
-          statusChangedBy: ctx.user.sub,
+          accreditedStatus: 'REJECTED',
+          accreditedReason: input.reason,
+          accreditedChangedAt: new Date(),
+          accreditedChangedBy: ctx.user.sub,
         },
         select: {
           id: true,
           email: true,
-          status: true,
+          accreditedStatus: true,
         },
       });
 
@@ -580,8 +612,8 @@ export const adminRouter = router({
           action: 'UPDATE',
           entityType: 'USER',
           entityId: input.userId,
-          newValues: { status: 'REJECTED' },
-          metadata: { reason: input.reason, action: 'REJECT_USER' },
+          newValues: { accreditedStatus: 'REJECTED' },
+          metadata: { reason: input.reason, action: 'REJECT_ACCREDITED_STATUS' },
         },
       });
 
@@ -590,14 +622,15 @@ export const adminRouter = router({
       return {
         success: true,
         user: updatedUser,
-        message: `User ${updatedUser.email} has been rejected`,
+        message: `User ${updatedUser.email}'s accreditation request has been rejected`,
       };
     }),
 
   /**
-   * Bulk approve pending users
+   * Bulk approve accredited investor status for users
+   * Only approves users who have verified their email
    */
-  bulkApproveUsers: adminProcedure
+  bulkApproveAccreditedStatus: adminProcedure
     .input(
       z.object({
         userIds: z.array(z.string()).min(1),
@@ -607,11 +640,12 @@ export const adminRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { userIds, notes } = input;
 
-      // Verify all users exist and are pending
+      // Verify all users exist, are pending, and have verified email
       const users = await ctx.prisma.user.findMany({
         where: {
           id: { in: userIds },
-          status: 'PENDING',
+          accreditedStatus: 'PENDING',
+          emailVerified: { not: null }, // Must have verified email
         },
         select: { id: true, email: true },
       });
@@ -621,7 +655,7 @@ export const adminRouter = router({
         const notFound = userIds.filter(id => !foundIds.includes(id));
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: `Some users not found or not pending: ${notFound.join(', ')}`,
+          message: `Some users not found, not pending, or haven't verified email: ${notFound.join(', ')}`,
         });
       }
 
@@ -629,10 +663,10 @@ export const adminRouter = router({
       await ctx.prisma.user.updateMany({
         where: { id: { in: userIds } },
         data: {
-          status: 'APPROVED',
-          statusReason: notes,
-          statusChangedAt: new Date(),
-          statusChangedBy: ctx.user.sub,
+          accreditedStatus: 'APPROVED',
+          accreditedReason: notes,
+          accreditedChangedAt: new Date(),
+          accreditedChangedBy: ctx.user.sub,
         },
       });
 
@@ -643,8 +677,8 @@ export const adminRouter = router({
           action: 'UPDATE',
           entityType: 'USER',
           entityId: userIds.join(','),
-          newValues: { status: 'APPROVED', count: userIds.length },
-          metadata: { notes, action: 'BULK_APPROVE_USERS' },
+          newValues: { accreditedStatus: 'APPROVED', count: userIds.length },
+          metadata: { notes, action: 'BULK_APPROVE_ACCREDITED_STATUS' },
         },
       });
 
@@ -652,18 +686,18 @@ export const adminRouter = router({
         success: true,
         approvedCount: users.length,
         approvedEmails: users.map(u => u.email),
-        message: `${users.length} users have been approved`,
+        message: `${users.length} users have been approved as accredited investors`,
       };
     }),
 
   /**
-   * Update user approval status (for re-review or status change)
+   * Update user's accredited status (for re-review or status change)
    */
-  updateUserApprovalStatus: adminProcedure
+  updateAccreditedStatus: adminProcedure
     .input(
       z.object({
         userId: z.string(),
-        status: z.nativeEnum(UserStatus),
+        accreditedStatus: z.nativeEnum(AccreditedStatus),
         reason: z.string().optional(),
       })
     )
@@ -683,23 +717,24 @@ export const adminRouter = router({
       if (input.userId === ctx.user.sub) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Cannot change your own approval status',
+          message: 'Cannot change your own accreditation status',
         });
       }
 
-      const oldStatus = user.status;
+      const oldStatus = user.accreditedStatus;
       const updatedUser = await ctx.prisma.user.update({
         where: { id: input.userId },
         data: {
-          status: input.status,
-          statusReason: input.reason,
-          statusChangedAt: new Date(),
-          statusChangedBy: ctx.user.sub,
+          accreditedStatus: input.accreditedStatus,
+          accreditedReason: input.reason,
+          accreditedChangedAt: new Date(),
+          accreditedChangedBy: ctx.user.sub,
         },
         select: {
           id: true,
           email: true,
-          status: true,
+          accreditedStatus: true,
+          emailVerified: true,
         },
       });
 
@@ -710,16 +745,16 @@ export const adminRouter = router({
           action: 'UPDATE',
           entityType: 'USER',
           entityId: input.userId,
-          oldValues: { status: oldStatus },
-          newValues: { status: input.status },
-          metadata: { reason: input.reason, action: 'UPDATE_USER_STATUS' },
+          oldValues: { accreditedStatus: oldStatus },
+          newValues: { accreditedStatus: input.accreditedStatus },
+          metadata: { reason: input.reason, action: 'UPDATE_ACCREDITED_STATUS' },
         },
       });
 
       return {
         success: true,
         user: updatedUser,
-        message: `User status changed from ${oldStatus} to ${input.status}`,
+        message: `User accreditation status changed from ${oldStatus} to ${input.accreditedStatus}`,
       };
     }),
 

@@ -8,22 +8,22 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import type { Adapter } from 'next-auth/adapters';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/auth';
-import { UserRole, UserStatus } from '@prisma/client';
+import { UserRole, AccreditedStatus } from '@prisma/client';
 
 // Extended user type for our app
 declare module 'next-auth' {
   interface User {
     role: UserRole;
-    status: UserStatus;
-    accredited: boolean;
+    accreditedStatus: AccreditedStatus;
+    isEmailVerified: boolean; // Use different name to avoid conflict with base type
   }
   interface Session {
     user: {
       id: string;
       email: string;
       role: UserRole;
-      status: UserStatus;
-      accredited: boolean;
+      accreditedStatus: AccreditedStatus;
+      isEmailVerified: boolean;
       name?: string | null;
       image?: string | null;
     };
@@ -33,8 +33,8 @@ declare module 'next-auth' {
 declare module '@auth/core/jwt' {
   interface JWT {
     role: UserRole;
-    status: UserStatus;
-    accredited: boolean;
+    accreditedStatus: AccreditedStatus;
+    isEmailVerified: boolean;
   }
 }
 
@@ -94,16 +94,9 @@ export const authConfig: NextAuthConfig = {
           throw new Error('ACCOUNT_INACTIVE');
         }
 
-        // Check if account is pending approval
-        if (user.status === 'PENDING') {
-          throw new Error('ACCOUNT_PENDING');
-        }
-
-        // Check if account was rejected
-        if (user.status === 'REJECTED') {
-          throw new Error('ACCOUNT_REJECTED');
-        }
-
+        // Note: We allow login even if accreditedStatus is PENDING
+        // Users can log in but will have limited access until approved
+        
         const isValid = await verifyPassword(password, user.passwordHash);
         if (!isValid) {
           return null;
@@ -120,8 +113,8 @@ export const authConfig: NextAuthConfig = {
           email: user.email,
           name: user.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user.email,
           role: user.role,
-          status: user.status,
-          accredited: user.profile?.accredited || false,
+          accreditedStatus: user.accreditedStatus,
+          isEmailVerified: !!user.emailVerified, // user.emailVerified is from DB (Date | null)
         };
       },
     }),
@@ -143,17 +136,12 @@ export const authConfig: NextAuthConfig = {
           if (!existingUser.active) {
             return '/login?error=ACCOUNT_INACTIVE';
           }
-          // Check approval status
-          if (existingUser.status === 'PENDING') {
-            return '/register/pending';
-          }
-          if (existingUser.status === 'REJECTED') {
-            return '/login?error=ACCOUNT_REJECTED';
-          }
-        } else {
-          // New OAuth user - will be created by adapter with PENDING status
-          // The user will be redirected to pending page
+          // OAuth users are auto-verified (email comes from Google)
+          // But they still need accredited status approval to see full fund details
+          // Allow them to log in - they'll see limited data until approved
         }
+        // New OAuth user - will be created by adapter
+        // Email is verified (came from Google) but accreditedStatus starts as PENDING
       }
       return true;
     },
@@ -161,8 +149,8 @@ export const authConfig: NextAuthConfig = {
       // On initial sign in
       if (user) {
         token.role = (user.role || 'INVESTOR') as UserRole;
-        token.status = (user.status || 'PENDING') as UserStatus;
-        token.accredited = Boolean(user.accredited);
+        token.accreditedStatus = (user.accreditedStatus || 'PENDING') as AccreditedStatus;
+        token.isEmailVerified = Boolean(user.isEmailVerified);
       }
 
       // On subsequent requests, refresh user data from DB
@@ -170,12 +158,11 @@ export const authConfig: NextAuthConfig = {
         if (token.sub) {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            include: { profile: true },
           });
           if (dbUser) {
             token.role = dbUser.role;
-            token.status = dbUser.status;
-            token.accredited = dbUser.profile?.accredited || false;
+            token.accreditedStatus = dbUser.accreditedStatus;
+            token.isEmailVerified = !!dbUser.emailVerified;
           }
         }
       }
@@ -186,15 +173,16 @@ export const authConfig: NextAuthConfig = {
       if (token && session.user) {
         session.user.id = token.sub!;
         session.user.role = token.role as UserRole;
-        session.user.status = token.status as UserStatus;
-        session.user.accredited = Boolean(token.accredited);
+        session.user.accreditedStatus = token.accreditedStatus as AccreditedStatus;
+        session.user.isEmailVerified = Boolean(token.isEmailVerified);
       }
       return session;
     },
   },
   events: {
     async createUser({ user }) {
-      // When a new OAuth user is created, set them to PENDING and create profile
+      // When a new OAuth user is created, set up their account
+      // OAuth users get email auto-verified but accreditedStatus is PENDING
       if (user.id && user.email) {
         // Check if profile exists (shouldn't for OAuth users)
         const existingProfile = await prisma.profile.findUnique({
@@ -217,10 +205,13 @@ export const authConfig: NextAuthConfig = {
           });
         }
 
-        // Ensure status is PENDING (should be by default)
+        // OAuth users: email is verified (came from Google), but accredited status is PENDING
         await prisma.user.update({
           where: { id: user.id },
-          data: { status: 'PENDING' },
+          data: { 
+            emailVerified: new Date(), // Auto-verify email for OAuth users
+            accreditedStatus: 'PENDING', // Still need admin approval for accredited status
+          },
         });
       }
     },

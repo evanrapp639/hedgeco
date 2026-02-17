@@ -1,9 +1,51 @@
 // Fund router - CRUD and search operations for funds
 
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure, managerProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure, verifiedProcedure, accreditedProcedure, managerProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { FundType, FundStatus, Prisma } from '@prisma/client';
+
+// Helper to mask fund name for non-accredited users
+function maskFundName(name: string): string {
+  // Show first 3 chars + masked rest, e.g., "Acm*** Capital"
+  const words = name.split(' ');
+  return words.map(word => {
+    if (word.length <= 3) return word;
+    return word.slice(0, 3) + '***';
+  }).join(' ');
+}
+
+// Fields to return for teaser view (non-accredited users)
+const TEASER_FUND_SELECT = {
+  id: true,
+  slug: true,
+  type: true,
+  strategy: true,
+  subStrategy: true,
+  // Don't include: name, description, manager info, documents, etc.
+  aum: true,
+  aumDate: true,
+  inceptionDate: true,
+  minInvestment: true,
+  managementFee: true,
+  performanceFee: true,
+  // Location is okay
+  city: true,
+  state: true,
+  country: true,
+  featured: true,
+  // Basic stats only
+  statistics: {
+    select: {
+      ytdReturn: true,
+      oneYearReturn: true,
+      threeYearReturn: true,
+      sharpeRatio: true,
+      cagr: true,
+      volatility: true,
+    },
+  },
+} as const;
 
 export const fundRouter = router({
   /**
@@ -98,11 +140,23 @@ export const fundRouter = router({
     }),
 
   /**
-   * Get fund by slug - basic info (public)
+   * Get fund by slug - TEASER view for non-accredited, full view for accredited
+   * Non-accredited users see masked fund name and limited info
    */
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Check if user is accredited (both email verified AND accredited approved)
+      let isAccredited = false;
+      if (ctx.user) {
+        const user = await ctx.prisma.user.findUnique({
+          where: { id: ctx.user.sub },
+          select: { emailVerified: true, accreditedStatus: true },
+        });
+        isAccredited = !!(user?.emailVerified && user?.accreditedStatus === 'APPROVED');
+      }
+
+      // Always fetch with the same shape for consistent typing
       const fund = await ctx.prisma.fund.findUnique({
         where: { 
           slug: input.slug,
@@ -136,13 +190,31 @@ export const fundRouter = router({
         });
       }
 
-      return fund;
+      // If not accredited, return teaser data with masked name
+      if (!isAccredited) {
+        return {
+          ...fund,
+          name: maskFundName(fund.name),
+          description: fund.description 
+            ? fund.description.slice(0, 100) + '... [Verify accredited status to see full details]'
+            : null,
+          isTeaser: true,
+          // Hide manager details for non-accredited users
+          manager: null as typeof fund.manager | null,
+        };
+      }
+
+      return {
+        ...fund,
+        isTeaser: false,
+      };
     }),
 
   /**
-   * Get fund with full details including returns (authenticated)
+   * Get fund with full details including returns
+   * REQUIRES: Email verified AND Accredited status approved
    */
-  getFullDetails: protectedProcedure
+  getFullDetails: accreditedProcedure
     .input(z.object({ fundId: z.string() }))
     .query(async ({ ctx, input }) => {
       const fund = await ctx.prisma.fund.findUnique({
@@ -162,9 +234,7 @@ export const fundRouter = router({
           documents: {
             where: {
               accessLevel: {
-                in: ctx.user.accredited 
-                  ? ['PUBLIC', 'REGISTERED', 'ACCREDITED']
-                  : ['PUBLIC', 'REGISTERED'],
+                in: ['PUBLIC', 'REGISTERED', 'ACCREDITED'],
               },
             },
             select: {

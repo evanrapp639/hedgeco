@@ -81,34 +81,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if account is pending approval
-    if (user.status === 'PENDING') {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: { 
-            code: 'ACCOUNT_PENDING', 
-            message: 'Your account is pending admin approval. Please check back later.' 
-          } 
-        },
-        { status: 403 }
-      );
-    }
-
-    // Check if account was rejected
-    if (user.status === 'REJECTED') {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: { 
-            code: 'ACCOUNT_REJECTED', 
-            message: 'Your account application was not approved. Please contact support for more information.' 
-          } 
-        },
-        { status: 403 }
-      );
-    }
-
+    // Note: We allow login even if accreditedStatus is PENDING or REJECTED
+    // Users can access the platform but will see limited fund data until approved
+    
     // Check if user has a password (OAuth users won't)
     if (!user.passwordHash) {
       return NextResponse.json(
@@ -177,11 +152,12 @@ export async function POST(request: NextRequest) {
           id: user.id,
           email: user.email,
           role: user.role,
+          emailVerified: !!user.emailVerified,
+          accreditedStatus: user.accreditedStatus,
           profile: {
             firstName: user.profile?.firstName,
             lastName: user.profile?.lastName,
             company: user.profile?.company,
-            accredited: user.profile?.accredited || false,
           },
         },
       },

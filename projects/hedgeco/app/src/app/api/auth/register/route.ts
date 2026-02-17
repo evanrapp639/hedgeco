@@ -67,13 +67,15 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(data.password);
 
-    // Create user with profile (status defaults to PENDING)
+    // Create user with profile
+    // accreditedStatus defaults to PENDING (requires admin approval to view full fund details)
+    // emailVerified will be null until user verifies email (Step 1)
     const user = await prisma.user.create({
       data: {
         email: data.email.toLowerCase(),
         passwordHash,
         role: data.role as UserRole,
-        status: 'PENDING', // New users require admin approval
+        // accreditedStatus defaults to PENDING in schema
         profile: {
           create: {
             firstName: data.firstName,
@@ -104,18 +106,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Don't auto-login - account requires admin approval
-    // Return success with pending status message
+    // Return success - user needs to:
+    // 1. Verify their email (will send verification email)
+    // 2. Wait for admin to approve accredited investor status
     return NextResponse.json({
       success: true,
       data: {
-        pending: true,
-        message: 'Your account has been created and is pending admin approval. You will receive an email once your account is approved.',
+        requiresEmailVerification: true,
+        message: 'Your account has been created! Please check your email to verify your address. Once verified, an admin will review your accredited investor status.',
         user: {
           id: user.id,
           email: user.email,
           role: user.role,
-          status: 'PENDING',
+          emailVerified: false,
+          accreditedStatus: 'PENDING',
           profile: {
             firstName: user.profile?.firstName,
             lastName: user.profile?.lastName,

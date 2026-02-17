@@ -58,8 +58,8 @@ export async function GET() {
           id: user.id,
           email: user.email,
           role: user.role,
-          status: user.status,
           emailVerified: !!user.emailVerified,
+          accreditedStatus: user.accreditedStatus,
           profile: user.profile ? {
             firstName: user.profile.firstName,
             lastName: user.profile.lastName,

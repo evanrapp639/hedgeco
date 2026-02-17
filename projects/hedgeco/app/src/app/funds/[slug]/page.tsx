@@ -407,38 +407,57 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Manager Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Fund Manager</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-slate-500" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-slate-900">
-                      {fund.manager.profile?.firstName} {fund.manager.profile?.lastName}
+            {/* Manager Card - Only shown for accredited users */}
+            {fund.manager ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Fund Manager</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-slate-500" />
                     </div>
-                    <div className="text-sm text-slate-500">{fund.manager.profile?.title}</div>
+                    <div>
+                      <div className="font-medium text-slate-900">
+                        {fund.manager.profile?.firstName} {fund.manager.profile?.lastName}
+                      </div>
+                      <div className="text-sm text-slate-500">{fund.manager.profile?.title}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-sm text-slate-600 mb-4">{fund.manager.profile?.company}</div>
-                <div className="flex gap-2">
-                  <FollowButton
-                    entityId={fund.manager.id}
-                    entityType="manager"
-                    variant="outline"
-                    className="flex-1"
-                  />
-                  <Button className="flex-1">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Contact
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="text-sm text-slate-600 mb-4">{fund.manager.profile?.company}</div>
+                  <div className="flex gap-2">
+                    <FollowButton
+                      entityId={fund.manager.id}
+                      entityType="manager"
+                      variant="outline"
+                      className="flex-1"
+                    />
+                    <Button className="flex-1">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Contact
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Fund Manager</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <Lock className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm text-slate-600 mb-2">
+                      Manager details are only available to verified accredited investors.
+                    </p>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/settings/verification">Verify Status</a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Stats */}
             <Card>

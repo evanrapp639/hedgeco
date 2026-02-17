@@ -25,8 +25,8 @@ interface User {
   id: string;
   email: string;
   role: 'INVESTOR' | 'MANAGER' | 'SERVICE_PROVIDER' | 'NEWS_MEMBER' | 'ADMIN' | 'SUPER_ADMIN';
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   emailVerified: boolean;
+  accreditedStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   profile: UserProfile | null;
   serviceProvider?: {
     id: string;
@@ -40,8 +40,10 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isEmailVerified: boolean;
+  isAccredited: boolean; // True only if emailVerified AND accreditedStatus is APPROVED
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; pending?: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; requiresEmailVerification?: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Register function
-  const register = async (registerData: RegisterData): Promise<{ success: boolean; pending?: boolean; error?: string }> => {
+  const register = async (registerData: RegisterData): Promise<{ success: boolean; requiresEmailVerification?: boolean; error?: string }> => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -128,13 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (data.success) {
-        // If account is pending approval, don't set user - redirect to pending page
-        if (data.data.pending) {
-          // Redirect to pending page
-          router.push(`/register/pending?email=${encodeURIComponent(registerData.email)}`);
-          return { success: true, pending: true };
+        // Redirect to verification pending page
+        // User needs to verify email first, then wait for accredited status approval
+        if (data.data.requiresEmailVerification) {
+          router.push(`/register/pending?email=${encodeURIComponent(registerData.email)}&step=email`);
+          return { success: true, requiresEmailVerification: true };
         }
-        // Only set user if account is immediately approved (shouldn't happen with new flow)
         setUser(data.data.user);
         return { success: true };
       } else {
@@ -158,12 +159,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Computed properties for access control
+  const isEmailVerified = !!user?.emailVerified;
+  const isAccredited = isEmailVerified && user?.accreditedStatus === 'APPROVED';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
         isAuthenticated: !!user,
+        isEmailVerified,
+        isAccredited,
         login,
         register,
         logout,
