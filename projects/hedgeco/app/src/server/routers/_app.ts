@@ -11,6 +11,8 @@ import { returnRouter } from './return';
 import { searchRouter } from './search';
 import { aiRouter } from './ai';
 import { adminRouter } from './admin';
+import { pdfRouter } from './pdf';
+import { emailRouter } from './email';
 
 export const appRouter = router({
   fund: fundRouter,
@@ -23,6 +25,8 @@ export const appRouter = router({
   search: searchRouter,
   ai: aiRouter,
   admin: adminRouter,
+  pdf: pdfRouter,
+  email: emailRouter,
 });
 
 // Export type definition for client

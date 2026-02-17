@@ -805,6 +805,27 @@ enum AlertFrequency {
 }
 
 // ============================================================
+// EMAIL PREFERENCES
+// ============================================================
+
+model EmailPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  
+  // Preference flags
+  marketingEmails       Boolean  @default(true)
+  fundUpdates           Boolean  @default(true)
+  messageNotifications  Boolean  @default(true)
+  weeklyDigest          Boolean  @default(true)
+  meetingReminders      Boolean  @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// ============================================================
 // AUDIT & SECURITY
 // ============================================================
 

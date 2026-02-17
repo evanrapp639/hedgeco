@@ -4,8 +4,8 @@
 import { z } from 'zod';
 import { router, protectedProcedure, publicProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import OpenAI from 'openai';
 import { FundStatus } from '@prisma/client';
+import OpenAI from 'openai';
 import {
   generateEmbedding,
   searchFundsByVector,
@@ -32,7 +32,186 @@ const chatMessageSchema = z.object({
   content: z.string(),
 });
 
-// type ChatMessage = z.infer<typeof chatMessageSchema>;
+interface RecommendationCandidate {
+  id: string;
+  name: string;
+  type: string;
+  strategy: string | null;
+  similarity: number;
+  recencyScore: number;
+  diversityScore: number;
+  sizeMatch: number;
+  collaborativeScore: number;
+  finalScore: number;
+}
+
+// ============================================================
+// Recommendation Configuration
+// ============================================================
+
+const RECOMMENDATION_CONFIG = {
+  // Time decay: how much older views are discounted (exponential decay)
+  timeDecayHalfLifeDays: 30, // Views lose half their weight after 30 days
+  
+  // Diversification: minimum strategy diversity ratio
+  minStrategyDiversity: 0.4, // At least 40% different strategies
+  maxSameStrategy: 3, // Max 3 funds from same strategy
+  
+  // Investment size matching
+  sizeMatchWeight: 0.15,
+  
+  // Weights for final score
+  weights: {
+    semantic: 0.4,
+    recency: 0.15,
+    diversity: 0.2,
+    sizeMatch: 0.1,
+    collaborative: 0.15,
+  },
+};
+
+// ============================================================
+// Helper Functions
+// ============================================================
+
+/**
+ * Calculate time decay score for an activity
+ * More recent = higher score (0-1)
+ */
+function calculateTimeDecay(activityDate: Date): number {
+  const daysSince = (Date.now() - activityDate.getTime()) / (1000 * 60 * 60 * 24);
+  const halfLife = RECOMMENDATION_CONFIG.timeDecayHalfLifeDays;
+  return Math.pow(0.5, daysSince / halfLife);
+}
+
+/**
+ * Calculate investment size match score
+ * Returns 0-1 based on how well fund min investment matches user's typical size
+ */
+function calculateSizeMatch(
+  fundMinInvestment: number | null,
+  userTypicalSize: number | null
+): number {
+  if (!fundMinInvestment || !userTypicalSize) return 0.5; // Neutral if no data
+  
+  const ratio = fundMinInvestment / userTypicalSize;
+  
+  // Perfect match if fund minimum is 10-50% of user's typical investment
+  if (ratio >= 0.1 && ratio <= 0.5) return 1.0;
+  // Good match if 5-10% or 50-100%
+  if (ratio >= 0.05 && ratio < 0.1) return 0.8;
+  if (ratio > 0.5 && ratio <= 1.0) return 0.7;
+  // Acceptable if 1-200%
+  if (ratio > 1.0 && ratio <= 2.0) return 0.4;
+  // Poor match if way over
+  if (ratio > 2.0) return 0.1;
+  // Very small minimum is always okay
+  return 0.6;
+}
+
+/**
+ * Diversify recommendations to avoid strategy concentration
+ */
+function diversifyRecommendations(
+  candidates: RecommendationCandidate[],
+  limit: number
+): RecommendationCandidate[] {
+  const result: RecommendationCandidate[] = [];
+  const strategyCounts = new Map<string, number>();
+  
+  // Sort by final score first
+  const sorted = [...candidates].sort((a, b) => b.finalScore - a.finalScore);
+  
+  for (const candidate of sorted) {
+    if (result.length >= limit) break;
+    
+    const strategy = candidate.strategy || 'Unknown';
+    const currentCount = strategyCounts.get(strategy) || 0;
+    
+    // Skip if we already have max from this strategy (unless we need to fill)
+    if (currentCount >= RECOMMENDATION_CONFIG.maxSameStrategy) {
+      // Check if we have enough diversity
+      const uniqueStrategies = strategyCounts.size;
+      const targetDiversity = Math.ceil(limit * RECOMMENDATION_CONFIG.minStrategyDiversity);
+      
+      if (uniqueStrategies < targetDiversity) {
+        continue; // Skip this one, need more diversity
+      }
+    }
+    
+    result.push(candidate);
+    strategyCounts.set(strategy, currentCount + 1);
+  }
+  
+  // If we couldn't fill due to diversity constraints, relax and fill remaining
+  if (result.length < limit) {
+    const remaining = sorted.filter((c) => !result.includes(c));
+    for (const candidate of remaining) {
+      if (result.length >= limit) break;
+      result.push(candidate);
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Get collaborative filtering hints based on what similar users viewed
+ */
+async function getCollaborativeHints(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prisma: any,
+  userId: string,
+  viewedFundIds: string[]
+): Promise<Map<string, number>> {
+  const hints = new Map<string, number>();
+  
+  if (viewedFundIds.length === 0) return hints;
+  
+  // Find other users who viewed the same funds
+  const similarUsers = await prisma.$queryRaw<Array<{ userId: string; overlap: bigint }>>`
+    SELECT "userId", COUNT(*) as overlap
+    FROM "UserActivity"
+    WHERE 
+      "entityType" = 'FUND'
+      AND action = 'VIEW'
+      AND "entityId" IN (${prisma.$queryRaw`${viewedFundIds.join("','")}`})
+      AND "userId" != ${userId}
+    GROUP BY "userId"
+    HAVING COUNT(*) >= 2
+    ORDER BY overlap DESC
+    LIMIT 50
+  `;
+  
+  if (similarUsers.length === 0) return hints;
+  
+  const similarUserIds = similarUsers.map((u: { userId: string }) => u.userId);
+  
+  // Get funds those users also viewed (but current user hasn't)
+  const collaborativeFunds = await prisma.$queryRaw<Array<{ entityId: string; score: bigint }>>`
+    SELECT "entityId", COUNT(*) as score
+    FROM "UserActivity"
+    WHERE 
+      "entityType" = 'FUND'
+      AND action = 'VIEW'
+      AND "userId" IN (${prisma.$queryRaw`${similarUserIds.join("','")}`})
+      AND "entityId" NOT IN (${prisma.$queryRaw`${viewedFundIds.join("','")}`})
+    GROUP BY "entityId"
+    ORDER BY score DESC
+    LIMIT 100
+  `;
+  
+  // Normalize scores
+  const maxScore = collaborativeFunds.length > 0 
+    ? Number(collaborativeFunds[0].score) 
+    : 1;
+  
+  for (const fund of collaborativeFunds) {
+    hints.set(fund.entityId, Number(fund.score) / maxScore);
+  }
+  
+  return hints;
+}
 
 // ============================================================
 // AI Router
@@ -41,19 +220,21 @@ const chatMessageSchema = z.object({
 export const aiRouter = router({
   /**
    * Get personalized fund recommendations for the user
-   * Based on viewing history, saved searches, and profile preferences
+   * Enhanced with diversification, size matching, time decay, and collaborative filtering
    */
   getRecommendations: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(20).default(10),
         excludeViewed: z.boolean().default(false),
+        investmentSize: z.number().optional(), // User's intended investment size
+        diversify: z.boolean().default(true), // Whether to enforce diversification
       })
     )
     .query(async ({ ctx, input }) => {
-      const { limit, excludeViewed } = input;
+      const { limit, excludeViewed, investmentSize, diversify } = input;
 
-      // 1. Get user's recent activity to understand preferences
+      // 1. Get user's recent activity with timestamps for time decay
       const recentViews = await ctx.prisma.userActivity.findMany({
         where: {
           userId: ctx.user.sub,
@@ -61,13 +242,22 @@ export const aiRouter = router({
           entityType: 'FUND',
         },
         orderBy: { createdAt: 'desc' },
-        take: 20,
-        select: { entityId: true },
+        take: 50, // Get more for better analysis
+        select: { entityId: true, createdAt: true },
       });
 
       const viewedFundIds = recentViews
         .map((v) => v.entityId)
         .filter((id): id is string => id !== null);
+
+      // Calculate time-weighted view scores
+      const viewScores = new Map<string, number>();
+      for (const view of recentViews) {
+        if (!view.entityId) continue;
+        const decay = calculateTimeDecay(view.createdAt);
+        const current = viewScores.get(view.entityId) || 0;
+        viewScores.set(view.entityId, current + decay);
+      }
 
       // 2. Get user's saved searches
       const savedSearches = await ctx.prisma.savedSearch.findMany({
@@ -77,38 +267,89 @@ export const aiRouter = router({
         select: { query: true, filters: true },
       });
 
-      // 3. Get user's watchlist
+      // 3. Get user's watchlist with fund details
       const watchlist = await ctx.prisma.watchlist.findMany({
         where: { userId: ctx.user.sub },
         include: {
           fund: {
-            select: { strategy: true, type: true },
+            select: { strategy: true, type: true, minInvestment: true },
           },
         },
       });
 
-      // 4. Build a preference profile from this data
+      // 4. Get collaborative filtering hints
+      const collaborativeHints = await getCollaborativeHints(
+        ctx.prisma,
+        ctx.user.sub,
+        viewedFundIds
+      );
+
+      // 5. Determine user's typical investment size
+      let userTypicalSize = investmentSize;
+      if (!userTypicalSize) {
+        // Try to infer from profile or viewed funds
+        const profile = await ctx.prisma.profile.findUnique({
+          where: { userId: ctx.user.sub },
+          select: { preferences: true },
+        });
+        const prefs = profile?.preferences as { investmentSize?: number } | null;
+        userTypicalSize = prefs?.investmentSize;
+      }
+
+      // 6. Build preference profile from data
       const strategies = new Set<string>();
       const fundTypes = new Set<string>();
+      const strategyWeights = new Map<string, number>();
 
-      // From watchlist
-      watchlist.forEach((w) => {
-        if (w.fund.strategy) strategies.add(w.fund.strategy);
+      // From watchlist (highest weight)
+      for (const w of watchlist) {
+        if (w.fund.strategy) {
+          strategies.add(w.fund.strategy);
+          strategyWeights.set(
+            w.fund.strategy,
+            (strategyWeights.get(w.fund.strategy) || 0) + 2
+          );
+        }
         fundTypes.add(w.fund.type);
-      });
+      }
+
+      // From viewed funds (with time decay)
+      if (viewedFundIds.length > 0) {
+        const viewedFunds = await ctx.prisma.fund.findMany({
+          where: { id: { in: viewedFundIds } },
+          select: { id: true, strategy: true, type: true },
+        });
+        
+        for (const fund of viewedFunds) {
+          if (fund.strategy) {
+            strategies.add(fund.strategy);
+            const weight = viewScores.get(fund.id) || 0;
+            strategyWeights.set(
+              fund.strategy,
+              (strategyWeights.get(fund.strategy) || 0) + weight
+            );
+          }
+          fundTypes.add(fund.type);
+        }
+      }
 
       // From saved searches
-      savedSearches.forEach((s) => {
+      for (const s of savedSearches) {
         if (s.query) strategies.add(s.query);
         const filters = s.filters as { fundType?: string; strategy?: string };
         if (filters?.fundType) fundTypes.add(filters.fundType);
         if (filters?.strategy) strategies.add(filters.strategy);
-      });
+      }
 
-      // 5. Build preference embedding text
+      // 7. Build preference embedding text
       let preferenceText = 'Investor looking for: ';
       if (strategies.size > 0) {
-        preferenceText += `Strategies: ${Array.from(strategies).join(', ')}. `;
+        // Weight strategies by preference strength
+        const sortedStrategies = Array.from(strategyWeights.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([s]) => s);
+        preferenceText += `Strategies: ${sortedStrategies.join(', ')}. `;
       }
       if (fundTypes.size > 0) {
         preferenceText += `Fund types: ${Array.from(fundTypes).join(', ')}. `;
@@ -119,21 +360,94 @@ export const aiRouter = router({
         preferenceText = 'Looking for top performing hedge funds and alternative investments';
       }
 
-      // 6. Generate embedding for preferences
+      // 8. Generate embedding for preferences
       const { embedding } = await generateEmbedding(preferenceText);
 
-      // 7. Search for matching funds
+      // 9. Search for matching funds (get extra for filtering)
       const excludeIds = excludeViewed ? viewedFundIds : [];
-      const recommendations = await searchFundsByVector(embedding, {
-        limit: limit * 2, // Get extra for filtering
-        threshold: 0.4,
+      const rawResults = await searchFundsByVector(embedding, {
+        limit: limit * 4, // Get more for diversification filtering
+        threshold: 0.35,
         excludeIds,
       });
 
-      // 8. Fetch full fund details
-      const recIds = recommendations.slice(0, limit).map((r) => r.id);
+      // 10. Fetch fund details for scoring
+      const candidateIds = rawResults.map((r) => r.id);
+      const candidateFunds = await ctx.prisma.fund.findMany({
+        where: { id: { in: candidateIds } },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          strategy: true,
+          minInvestment: true,
+        },
+      });
+      
+      const fundDetailsMap = new Map(candidateFunds.map((f) => [f.id, f]));
+
+      // 11. Calculate composite scores for each candidate
+      const scoredCandidates: RecommendationCandidate[] = rawResults.map((r) => {
+        const fund = fundDetailsMap.get(r.id);
+        const strategy = fund?.strategy || null;
+        
+        // Semantic score (from vector search)
+        const semanticScore = r.similarity;
+        
+        // Recency score (time-decayed preference for recently viewed similar strategies)
+        let recencyScore = 0.5;
+        if (strategy && strategyWeights.has(strategy)) {
+          recencyScore = Math.min(1, strategyWeights.get(strategy)! / 3);
+        }
+        
+        // Diversity score (prefer strategies user hasn't seen much)
+        let diversityScore = 0.7;
+        if (strategy) {
+          const strategyViewCount = strategyWeights.get(strategy) || 0;
+          diversityScore = 1 - Math.min(0.7, strategyViewCount / 5);
+        }
+        
+        // Size match score
+        const sizeMatch = calculateSizeMatch(
+          fund?.minInvestment ? Number(fund.minInvestment) : null,
+          userTypicalSize || null
+        );
+        
+        // Collaborative filtering score
+        const collaborativeScore = collaborativeHints.get(r.id) || 0;
+        
+        // Calculate final score
+        const w = RECOMMENDATION_CONFIG.weights;
+        const finalScore =
+          w.semantic * semanticScore +
+          w.recency * recencyScore +
+          w.diversity * diversityScore +
+          w.sizeMatch * sizeMatch +
+          w.collaborative * collaborativeScore;
+        
+        return {
+          id: r.id,
+          name: fund?.name || '',
+          type: fund?.type || '',
+          strategy,
+          similarity: semanticScore,
+          recencyScore,
+          diversityScore,
+          sizeMatch,
+          collaborativeScore,
+          finalScore,
+        };
+      });
+
+      // 12. Apply diversification if enabled
+      const finalCandidates = diversify
+        ? diversifyRecommendations(scoredCandidates, limit)
+        : scoredCandidates.sort((a, b) => b.finalScore - a.finalScore).slice(0, limit);
+
+      // 13. Fetch full fund details for final recommendations
+      const finalIds = finalCandidates.map((c) => c.id);
       const funds = await ctx.prisma.fund.findMany({
-        where: { id: { in: recIds } },
+        where: { id: { in: finalIds } },
         include: {
           statistics: {
             select: {
@@ -146,15 +460,32 @@ export const aiRouter = router({
         },
       });
 
-      // Merge similarity scores
+      // Merge scores with fund data, maintaining order
       const fundMap = new Map(funds.map((f) => [f.id, f]));
-      const enrichedRecs = recommendations
-        .slice(0, limit)
-        .map((r) => ({
-          ...fundMap.get(r.id)!,
-          relevanceScore: r.similarity,
-        }))
-        .filter((r) => r !== undefined);
+      const enrichedRecs = finalCandidates
+        .map((c) => {
+          const fund = fundMap.get(c.id);
+          if (!fund) return null;
+          return {
+            ...fund,
+            relevanceScore: c.finalScore,
+            scores: {
+              semantic: c.similarity,
+              recency: c.recencyScore,
+              diversity: c.diversityScore,
+              sizeMatch: c.sizeMatch,
+              collaborative: c.collaborativeScore,
+            },
+          };
+        })
+        .filter((r) => r !== null);
+
+      // Calculate strategy distribution for transparency
+      const strategyDistribution: Record<string, number> = {};
+      for (const rec of enrichedRecs) {
+        const strat = rec.strategy || 'Other';
+        strategyDistribution[strat] = (strategyDistribution[strat] || 0) + 1;
+      }
 
       return {
         recommendations: enrichedRecs,
@@ -163,6 +494,11 @@ export const aiRouter = router({
           savedSearches: savedSearches.length,
           watchlistItems: watchlist.length,
           preferenceText,
+          collaborativeUsers: collaborativeHints.size > 0,
+        },
+        diversity: {
+          uniqueStrategies: Object.keys(strategyDistribution).length,
+          distribution: strategyDistribution,
         },
       };
     }),
