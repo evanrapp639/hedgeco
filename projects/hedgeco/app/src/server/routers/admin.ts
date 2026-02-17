@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { router, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { UserRole, FundStatus } from '@prisma/client';
+import { UserRole, FundStatus, UserStatus } from '@prisma/client';
 
 export const adminRouter = router({
   /**
@@ -13,6 +13,7 @@ export const adminRouter = router({
     const [
       totalUsers,
       pendingUsers,
+      pendingApprovalUsers,
       totalFunds,
       pendingFunds,
       totalProviders,
@@ -20,6 +21,7 @@ export const adminRouter = router({
     ] = await Promise.all([
       ctx.prisma.user.count(),
       ctx.prisma.user.count({ where: { emailVerified: null } }),
+      ctx.prisma.user.count({ where: { status: 'PENDING' } }), // Users awaiting admin approval
       ctx.prisma.fund.count(),
       ctx.prisma.fund.count({ where: { status: 'PENDING_REVIEW' } }),
       ctx.prisma.serviceProvider.count(),
@@ -60,6 +62,7 @@ export const adminRouter = router({
       users: {
         total: totalUsers,
         pending: pendingUsers,
+        pendingApproval: pendingApprovalUsers, // Users awaiting admin approval
         newThisWeek: newUsersThisWeek,
         byRole: usersByRole.reduce((acc, item) => {
           acc[item.role] = item._count;
@@ -93,6 +96,7 @@ export const adminRouter = router({
         search: z.string().optional(),
         role: z.nativeEnum(UserRole).optional(),
         status: z.enum(['active', 'pending', 'locked']).optional(),
+        approvalStatus: z.nativeEnum(UserStatus).optional(), // Filter by approval status
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
         sortBy: z.enum(['createdAt', 'email', 'lastLoginAt']).default('createdAt'),
@@ -100,7 +104,7 @@ export const adminRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { search, role, status, page, limit, sortBy, sortOrder } = input;
+      const { search, role, status, approvalStatus, page, limit, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
       // Build where clause
@@ -134,6 +138,11 @@ export const adminRouter = router({
         }
       }
 
+      // Filter by approval status (PENDING, APPROVED, REJECTED)
+      if (approvalStatus) {
+        where.status = approvalStatus;
+      }
+
       const [users, total] = await Promise.all([
         ctx.prisma.user.findMany({
           where,
@@ -141,6 +150,9 @@ export const adminRouter = router({
             id: true,
             email: true,
             role: true,
+            status: true, // Include approval status
+            statusReason: true,
+            statusChangedAt: true,
             emailVerified: true,
             active: true,
             locked: true,
@@ -377,6 +389,338 @@ export const adminRouter = router({
       });
 
       return { success: true };
+    }),
+
+  // ============================================================
+  // USER APPROVAL WORKFLOW
+  // ============================================================
+
+  /**
+   * Get pending users awaiting approval
+   */
+  getPendingUsers: adminProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+        sortBy: z.enum(['createdAt', 'email']).default('createdAt'),
+        sortOrder: z.enum(['asc', 'desc']).default('desc'),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, limit, sortBy, sortOrder } = input;
+      const skip = (page - 1) * limit;
+
+      const [users, total] = await Promise.all([
+        ctx.prisma.user.findMany({
+          where: { status: 'PENDING' },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            createdAt: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                company: true,
+                title: true,
+                phone: true,
+                avatarUrl: true,
+              },
+            },
+            accounts: {
+              select: {
+                provider: true,
+              },
+            },
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip,
+          take: limit,
+        }),
+        ctx.prisma.user.count({ where: { status: 'PENDING' } }),
+      ]);
+
+      // Transform to include OAuth provider info
+      const usersWithOAuth = users.map(user => ({
+        ...user,
+        isOAuthUser: user.accounts.length > 0,
+        oauthProviders: user.accounts.map(a => a.provider),
+      }));
+
+      return {
+        users: usersWithOAuth,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }),
+
+  /**
+   * Approve a pending user
+   */
+  approveUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        include: { profile: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (user.status !== 'PENDING') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `User is not pending approval. Current status: ${user.status}`,
+        });
+      }
+
+      const updatedUser = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          status: 'APPROVED',
+          statusReason: input.notes,
+          statusChangedAt: new Date(),
+          statusChangedBy: ctx.user.sub,
+        },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          profile: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      });
+
+      // Log the action
+      await ctx.prisma.auditLog.create({
+        data: {
+          userId: ctx.user.sub,
+          action: 'UPDATE',
+          entityType: 'USER',
+          entityId: input.userId,
+          newValues: { status: 'APPROVED' },
+          metadata: { notes: input.notes, action: 'APPROVE_USER' },
+        },
+      });
+
+      // TODO: Send approval email notification to user
+
+      return {
+        success: true,
+        user: updatedUser,
+        message: `User ${updatedUser.email} has been approved`,
+      };
+    }),
+
+  /**
+   * Reject a pending user
+   */
+  rejectUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        reason: z.string().min(1, 'Rejection reason is required'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (user.status !== 'PENDING') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `User is not pending approval. Current status: ${user.status}`,
+        });
+      }
+
+      const updatedUser = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          status: 'REJECTED',
+          statusReason: input.reason,
+          statusChangedAt: new Date(),
+          statusChangedBy: ctx.user.sub,
+        },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+        },
+      });
+
+      // Log the action
+      await ctx.prisma.auditLog.create({
+        data: {
+          userId: ctx.user.sub,
+          action: 'UPDATE',
+          entityType: 'USER',
+          entityId: input.userId,
+          newValues: { status: 'REJECTED' },
+          metadata: { reason: input.reason, action: 'REJECT_USER' },
+        },
+      });
+
+      // TODO: Send rejection email notification to user
+
+      return {
+        success: true,
+        user: updatedUser,
+        message: `User ${updatedUser.email} has been rejected`,
+      };
+    }),
+
+  /**
+   * Bulk approve pending users
+   */
+  bulkApproveUsers: adminProcedure
+    .input(
+      z.object({
+        userIds: z.array(z.string()).min(1),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userIds, notes } = input;
+
+      // Verify all users exist and are pending
+      const users = await ctx.prisma.user.findMany({
+        where: {
+          id: { in: userIds },
+          status: 'PENDING',
+        },
+        select: { id: true, email: true },
+      });
+
+      if (users.length !== userIds.length) {
+        const foundIds = users.map(u => u.id);
+        const notFound = userIds.filter(id => !foundIds.includes(id));
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Some users not found or not pending: ${notFound.join(', ')}`,
+        });
+      }
+
+      // Bulk update
+      await ctx.prisma.user.updateMany({
+        where: { id: { in: userIds } },
+        data: {
+          status: 'APPROVED',
+          statusReason: notes,
+          statusChangedAt: new Date(),
+          statusChangedBy: ctx.user.sub,
+        },
+      });
+
+      // Log the action
+      await ctx.prisma.auditLog.create({
+        data: {
+          userId: ctx.user.sub,
+          action: 'UPDATE',
+          entityType: 'USER',
+          entityId: userIds.join(','),
+          newValues: { status: 'APPROVED', count: userIds.length },
+          metadata: { notes, action: 'BULK_APPROVE_USERS' },
+        },
+      });
+
+      return {
+        success: true,
+        approvedCount: users.length,
+        approvedEmails: users.map(u => u.email),
+        message: `${users.length} users have been approved`,
+      };
+    }),
+
+  /**
+   * Update user approval status (for re-review or status change)
+   */
+  updateUserApprovalStatus: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        status: z.nativeEnum(UserStatus),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Prevent changing own status
+      if (input.userId === ctx.user.sub) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot change your own approval status',
+        });
+      }
+
+      const oldStatus = user.status;
+      const updatedUser = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          status: input.status,
+          statusReason: input.reason,
+          statusChangedAt: new Date(),
+          statusChangedBy: ctx.user.sub,
+        },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+        },
+      });
+
+      // Log the action
+      await ctx.prisma.auditLog.create({
+        data: {
+          userId: ctx.user.sub,
+          action: 'UPDATE',
+          entityType: 'USER',
+          entityId: input.userId,
+          oldValues: { status: oldStatus },
+          newValues: { status: input.status },
+          metadata: { reason: input.reason, action: 'UPDATE_USER_STATUS' },
+        },
+      });
+
+      return {
+        success: true,
+        user: updatedUser,
+        message: `User status changed from ${oldStatus} to ${input.status}`,
+      };
     }),
 
   /**

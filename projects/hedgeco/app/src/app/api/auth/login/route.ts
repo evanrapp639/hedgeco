@@ -81,6 +81,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if account is pending approval
+    if (user.status === 'PENDING') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'ACCOUNT_PENDING', 
+            message: 'Your account is pending admin approval. Please check back later.' 
+          } 
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if account was rejected
+    if (user.status === 'REJECTED') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'ACCOUNT_REJECTED', 
+            message: 'Your account application was not approved. Please contact support for more information.' 
+          } 
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if user has a password (OAuth users won't)
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'OAUTH_USER', 
+            message: 'This account uses Google sign-in. Please use the "Sign in with Google" button.' 
+          } 
+        },
+        { status: 400 }
+      );
+    }
+
     // Verify password
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {

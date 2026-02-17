@@ -19,7 +19,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  passwordHash  String
+  passwordHash  String?   // Optional for OAuth users
 
   // Status
   emailVerified DateTime?
@@ -28,8 +28,17 @@ model User {
   lockedAt      DateTime?
   lockedReason  String?
 
+  // Approval status (admin approval workflow)
+  status        UserStatus @default(PENDING)
+  statusReason  String?    // Reason for rejection or notes
+  statusChangedAt DateTime?
+  statusChangedBy String?   // Admin who changed the status
+
   // Role & permissions
   role          UserRole  @default(INVESTOR)
+
+  // OAuth accounts
+  accounts      Account[]
 
   // Relationships
   profile       Profile?
@@ -80,6 +89,7 @@ model User {
 
   @@index([email])
   @@index([role, active])
+  @@index([status])
 }
 
 enum UserRole {
@@ -89,6 +99,12 @@ enum UserRole {
   NEWS_MEMBER
   ADMIN
   SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Profile {
@@ -176,6 +192,27 @@ model RefreshToken {
 
   @@index([userId, tokenFamily])
   @@index([tokenHash])
+}
+
+// OAuth Account (for Google OAuth, etc.)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 // ============================================================

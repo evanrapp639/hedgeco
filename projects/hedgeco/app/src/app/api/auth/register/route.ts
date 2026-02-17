@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hashPassword, generateTokenPair, setAuthCookies } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 
@@ -67,12 +67,13 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(data.password);
 
-    // Create user with profile
+    // Create user with profile (status defaults to PENDING)
     const user = await prisma.user.create({
       data: {
         email: data.email.toLowerCase(),
         passwordHash,
         role: data.role as UserRole,
+        status: 'PENDING', // New users require admin approval
         profile: {
           create: {
             firstName: data.firstName,
@@ -103,34 +104,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate tokens
-    const tokens = await generateTokenPair({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      accredited: user.profile?.accredited || false,
-    });
-
-    // Set cookies
-    await setAuthCookies(tokens.accessToken, tokens.refreshToken);
-
-    // Store refresh token in database
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: tokens.refreshToken.slice(-32), // Store partial hash for lookup
-        tokenFamily: tokens.tokenFamily,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      },
-    });
-
+    // Don't auto-login - account requires admin approval
+    // Return success with pending status message
     return NextResponse.json({
       success: true,
       data: {
+        pending: true,
+        message: 'Your account has been created and is pending admin approval. You will receive an email once your account is approved.',
         user: {
           id: user.id,
           email: user.email,
           role: user.role,
+          status: 'PENDING',
           profile: {
             firstName: user.profile?.firstName,
             lastName: user.profile?.lastName,

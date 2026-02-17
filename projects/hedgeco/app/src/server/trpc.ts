@@ -51,7 +51,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 /**
- * Protected procedure - requires authentication
+ * Protected procedure - requires authentication and approved status
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
@@ -60,6 +60,48 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
       message: 'You must be logged in to access this resource',
     });
   }
+  
+  // Check user approval status from database
+  const user = await ctx.prisma.user.findUnique({
+    where: { id: ctx.user.sub },
+    select: { status: true, locked: true, active: true },
+  });
+  
+  if (!user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'User not found',
+    });
+  }
+  
+  if (user.locked) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your account has been locked. Please contact support.',
+    });
+  }
+  
+  if (!user.active) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your account is inactive. Please contact support.',
+    });
+  }
+  
+  if (user.status === 'PENDING') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your account is pending admin approval. Please check back later.',
+    });
+  }
+  
+  if (user.status === 'REJECTED') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your account application was not approved. Please contact support.',
+    });
+  }
+  
   return next({
     ctx: {
       ...ctx,
