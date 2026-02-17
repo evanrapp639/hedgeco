@@ -3,8 +3,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { sendVerificationEmail } from '@/lib/email';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 // Validation schema
 const registerSchema = z.object({
@@ -106,8 +108,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Create email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token: verificationToken,
+        type: 'EMAIL',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    });
+
+    // Send verification email
+    const userName = `${data.firstName} ${data.lastName}`;
+    await sendVerificationEmail(
+      { email: user.email, name: userName },
+      verificationToken
+    );
+
     // Return success - user needs to:
-    // 1. Verify their email (will send verification email)
+    // 1. Verify their email (verification email sent)
     // 2. Wait for admin to approve accredited investor status
     return NextResponse.json({
       success: true,

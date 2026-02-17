@@ -198,6 +198,25 @@ model RefreshToken {
   @@index([tokenHash])
 }
 
+// Email Verification Token
+model VerificationToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  type       VerificationTokenType @default(EMAIL)
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([token])
+  @@index([userId, type])
+}
+
+enum VerificationTokenType {
+  EMAIL
+  PASSWORD_RESET
+}
+
 // OAuth Account (for Google OAuth, etc.)
 model Account {
   id                String  @id @default(cuid())

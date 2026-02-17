@@ -352,3 +352,267 @@ export async function sendBatchEmails(
 
   return results;
 }
+
+/**
+ * Send email verification link to user
+ */
+export async function sendVerificationEmail(
+  user: { email: string; name: string },
+  verificationToken: string
+): Promise<EmailResult> {
+  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify-email?token=${verificationToken}`;
+  const firstName = user.name.split(' ')[0] || 'there';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1a365d; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 40px; border: 1px solid #e2e8f0; }
+        .footer { background: #f7fafc; padding: 20px; text-align: center; font-size: 12px; color: #718096; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: #2c5282; color: white !important; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+        .button:hover { background: #2b4c6f; }
+        .info-box { background: #ebf8ff; border: 1px solid #90cdf4; padding: 15px; border-radius: 6px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">Welcome to HedgeCo!</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${firstName},</p>
+          <p>Thank you for registering with HedgeCo. Please verify your email address by clicking the button below:</p>
+          
+          <div style="text-align: center;">
+            <a href="${verifyUrl}" class="button">Verify Email Address</a>
+          </div>
+          
+          <div class="info-box">
+            <p style="margin: 0;"><strong>What happens next?</strong></p>
+            <ol style="margin: 10px 0 0; padding-left: 20px;">
+              <li>Click the button above to verify your email</li>
+              <li>Our team will review your account for accredited investor status</li>
+              <li>Once approved, you'll have full access to fund details and documents</li>
+            </ol>
+          </div>
+          
+          <p style="color: #718096; font-size: 14px;">
+            If you didn't create an account with HedgeCo, you can safely ignore this email.
+          </p>
+          
+          <p style="color: #718096; font-size: 14px;">
+            This link will expire in 24 hours. If you need a new verification link, 
+            please <a href="${process.env.NEXT_PUBLIC_APP_URL}/resend-verification">request a new one</a>.
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} HedgeCo. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Verify your HedgeCo account',
+    html,
+  });
+}
+
+/**
+ * Send admin notification when a user needs review
+ */
+export async function sendAdminNewUserNotification(
+  adminEmail: string,
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    company?: string;
+  }
+): Promise<EmailResult> {
+  const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/users/${user.id}`;
+  const roleLabels: Record<string, string> = {
+    INVESTOR: 'Investor',
+    MANAGER: 'Fund Manager',
+    SERVICE_PROVIDER: 'Service Provider',
+    NEWS_MEMBER: 'News Member',
+  };
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #744210; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; }
+        .footer { background: #f7fafc; padding: 20px; text-align: center; font-size: 12px; color: #718096; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: #744210; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .user-card { background: #fffaf0; border: 1px solid #ed8936; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .badge { display: inline-block; background: #ed8936; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2 style="margin: 0;">🔔 New User Requires Review</h2>
+        </div>
+        <div class="content">
+          <p>A new user has verified their email and needs accredited investor status review:</p>
+          
+          <div class="user-card">
+            <p style="margin: 0 0 10px;"><span class="badge">${roleLabels[user.role] || user.role}</span></p>
+            <p style="margin: 0 0 5px;"><strong>${user.name}</strong></p>
+            <p style="margin: 0 0 5px; color: #4a5568;">${user.email}</p>
+            ${user.company ? `<p style="margin: 0; color: #718096;">🏢 ${user.company}</p>` : ''}
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${reviewUrl}" class="button">Review User</a>
+          </div>
+          
+          <p style="color: #718096; font-size: 14px; margin-top: 20px;">
+            You can also view all pending users in the <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/users?status=pending">Admin Dashboard</a>.
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} HedgeCo Admin</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `[Action Required] New ${roleLabels[user.role] || 'User'} needs review: ${user.name}`,
+    html,
+  });
+}
+
+/**
+ * Send approval notification to user
+ */
+export async function sendAccreditedApprovalEmail(
+  user: { email: string; name: string }
+): Promise<EmailResult> {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`;
+  const firstName = user.name.split(' ')[0] || 'there';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #276749; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 40px; border: 1px solid #e2e8f0; }
+        .footer { background: #f7fafc; padding: 20px; text-align: center; font-size: 12px; color: #718096; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: #276749; color: white !important; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+        .feature-list { background: #f0fff4; border: 1px solid #9ae6b4; padding: 20px; border-radius: 6px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">✅ You're Approved!</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${firstName},</p>
+          <p>Great news! Your accredited investor status has been approved. You now have full access to HedgeCo.</p>
+          
+          <div class="feature-list">
+            <p style="margin: 0 0 10px;"><strong>You can now:</strong></p>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li>View complete fund and SPV details</li>
+              <li>Access fund documents and performance data</li>
+              <li>Contact fund managers directly</li>
+              <li>Request meetings and make inquiries</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${loginUrl}" class="button">Log In & Explore</a>
+          </div>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} HedgeCo. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Your HedgeCo account is approved!',
+    html,
+  });
+}
+
+/**
+ * Send rejection notification to user
+ */
+export async function sendAccreditedRejectionEmail(
+  user: { email: string; name: string },
+  reason: string
+): Promise<EmailResult> {
+  const supportUrl = `${process.env.NEXT_PUBLIC_APP_URL}/support`;
+  const firstName = user.name.split(' ')[0] || 'there';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #742a2a; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 40px; border: 1px solid #e2e8f0; }
+        .footer { background: #f7fafc; padding: 20px; text-align: center; font-size: 12px; color: #718096; border-radius: 0 0 8px 8px; }
+        .reason-box { background: #fff5f5; border: 1px solid #fc8181; padding: 20px; border-radius: 6px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">Account Review Update</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${firstName},</p>
+          <p>Thank you for your interest in HedgeCo. After reviewing your application, we were unable to verify your accredited investor status at this time.</p>
+          
+          <div class="reason-box">
+            <p style="margin: 0 0 5px;"><strong>Reason:</strong></p>
+            <p style="margin: 0;">${reason}</p>
+          </div>
+          
+          <p>If you believe this was in error or have additional documentation to support your accredited investor status, please contact our support team.</p>
+          
+          <p>
+            <a href="${supportUrl}">Contact Support →</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} HedgeCo. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: user.email,
+    subject: 'Update on your HedgeCo application',
+    html,
+  });
+}

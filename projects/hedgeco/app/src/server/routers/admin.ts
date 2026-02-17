@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { router, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { UserRole, FundStatus, AccreditedStatus } from '@prisma/client';
+import { sendAccreditedApprovalEmail, sendAccreditedRejectionEmail } from '@/lib/email';
 
 export const adminRouter = router({
   /**
@@ -398,19 +399,21 @@ export const adminRouter = router({
   /**
    * Get users pending accredited investor approval
    * These are users who have verified their email but need admin approval for accredited status
+   * Can filter by user type (role): INVESTOR, MANAGER, SERVICE_PROVIDER
    */
   getPendingAccreditedUsers: adminProcedure
     .input(
       z.object({
         emailVerifiedOnly: z.boolean().default(true), // Only show users who verified email
+        role: z.nativeEnum(UserRole).optional(), // Filter by user type
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
-        sortBy: z.enum(['createdAt', 'email']).default('createdAt'),
+        sortBy: z.enum(['createdAt', 'email', 'role']).default('createdAt'),
         sortOrder: z.enum(['asc', 'desc']).default('desc'),
       })
     )
     .query(async ({ ctx, input }) => {
-      const { emailVerifiedOnly, page, limit, sortBy, sortOrder } = input;
+      const { emailVerifiedOnly, role, page, limit, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
       const where: Record<string, unknown> = { 
@@ -422,7 +425,12 @@ export const adminRouter = router({
         where.emailVerified = { not: null };
       }
 
-      const [users, total, unverifiedCount] = await Promise.all([
+      // Filter by role/user type
+      if (role) {
+        where.role = role;
+      }
+
+      const [users, total, unverifiedCount, countsByRole] = await Promise.all([
         ctx.prisma.user.findMany({
           where,
           select: {
@@ -460,6 +468,15 @@ export const adminRouter = router({
             emailVerified: null,
           } 
         }),
+        // Count pending users by role (for tab badges)
+        ctx.prisma.user.groupBy({
+          by: ['role'],
+          where: { 
+            accreditedStatus: 'PENDING',
+            emailVerified: { not: null },
+          },
+          _count: true,
+        }),
       ]);
 
       // Transform to include OAuth provider info and verification status
@@ -470,9 +487,16 @@ export const adminRouter = router({
         isEmailVerified: !!user.emailVerified,
       }));
 
+      // Transform counts by role into an object
+      const pendingByRole = countsByRole.reduce((acc, item) => {
+        acc[item.role] = item._count;
+        return acc;
+      }, {} as Record<string, number>);
+
       return {
         users: usersWithDetails,
         unverifiedCount, // Users still waiting to verify email
+        pendingByRole, // { INVESTOR: 5, MANAGER: 2, SERVICE_PROVIDER: 1, ... }
         pagination: {
           page,
           limit,
@@ -552,7 +576,22 @@ export const adminRouter = router({
         },
       });
 
-      // TODO: Send approval email notification to user
+      // Create notification for user
+      await ctx.prisma.notification.create({
+        data: {
+          userId: input.userId,
+          type: 'SYSTEM',
+          title: 'Account Approved!',
+          message: 'Your accredited investor status has been approved. You now have full access to fund details.',
+          link: '/dashboard',
+        },
+      });
+
+      // Send approval email notification to user
+      const userName = user.profile 
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : user.email;
+      await sendAccreditedApprovalEmail({ email: user.email, name: userName });
 
       return {
         success: true,
@@ -617,7 +656,25 @@ export const adminRouter = router({
         },
       });
 
-      // TODO: Send rejection email notification to user
+      // Create notification for user
+      await ctx.prisma.notification.create({
+        data: {
+          userId: input.userId,
+          type: 'SYSTEM',
+          title: 'Account Review Update',
+          message: 'Your accredited investor application was not approved. Please contact support for more information.',
+          link: '/support',
+        },
+      });
+
+      // Send rejection email notification to user
+      const userProfile = await ctx.prisma.profile.findUnique({
+        where: { userId: input.userId },
+      });
+      const userName = userProfile 
+        ? `${userProfile.firstName} ${userProfile.lastName}`
+        : user.email;
+      await sendAccreditedRejectionEmail({ email: user.email, name: userName }, input.reason);
 
       return {
         success: true,
