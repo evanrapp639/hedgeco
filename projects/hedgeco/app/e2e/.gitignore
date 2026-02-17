@@ -1,0 +1,7 @@
+# Test results and reports
+test-results/
+playwright-report/
+
+# Auth state (contains sensitive session data)
+.auth/
+!.auth/.gitkeep

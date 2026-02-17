@@ -3,12 +3,13 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearchPostgres"]
+  previewFeatures = ["fullTextSearchPostgres", "postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 // ============================================================
@@ -314,6 +315,9 @@ model Fund {
 
   // Watchlist
   watchedBy       Watchlist[]
+
+  // Vector embedding (for semantic search)
+  embedding       FundEmbedding?
 
   // Timestamps
   approvedAt      DateTime?
@@ -863,4 +867,65 @@ enum JobStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+// ============================================================
+// EMBEDDINGS & VECTOR SEARCH (pgvector)
+// ============================================================
+
+model FundEmbedding {
+  id        String   @id @default(cuid())
+  fundId    String   @unique
+  fund      Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  // Embedding vector (3072 dimensions for text-embedding-3-large)
+  // Stored via raw SQL - Prisma doesn't natively support vector type
+  embedding Unsupported("vector(3072)")?
+
+  // Text used to generate the embedding (for debugging/regeneration)
+  sourceText String  @db.Text
+
+  // Model info
+  model     String   @default("text-embedding-3-large")
+  dimensions Int     @default(3072)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fundId])
+}
+
+model SearchQuery {
+  id        String   @id @default(cuid())
+  userId    String?
+
+  // Search input
+  query     String
+  filters   Json?
+
+  // Search type
+  searchType SearchType @default(SEMANTIC)
+
+  // Results metadata
+  resultCount Int     @default(0)
+  topResultIds String[] // Store top 10 result IDs for analysis
+
+  // Timing
+  latencyMs Int?
+
+  // Optional: store query embedding for analysis
+  embedding Unsupported("vector(3072)")?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([searchType])
+  @@index([createdAt])
+}
+
+enum SearchType {
+  SEMANTIC    // Pure vector search
+  STRUCTURED  // SQL filters only
+  HYBRID      // Combined vector + filters
 }
