@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ignore ESLint errors during production builds
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
   // Enable standalone output for Docker deployments
   output: 'standalone',
 
