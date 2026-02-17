@@ -1,0 +1,891 @@
+/**
+ * Risk Metrics PDF Template
+ * Sprint 8: HedgeCo.Net
+ * 
+ * Comprehensive risk analysis report with tables and visualizations
+ */
+
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Svg,
+  Rect,
+  G,
+} from '@react-pdf/renderer';
+
+// Color palette
+const colors = {
+  primary: '#1a365d',
+  secondary: '#2c5282',
+  accent: '#0ea5e9',
+  success: '#16a34a',
+  danger: '#dc2626',
+  warning: '#f59e0b',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  background: '#f8fafc',
+  white: '#ffffff',
+  // Risk level colors
+  riskLow: '#22c55e',
+  riskMedium: '#eab308',
+  riskHigh: '#f97316',
+  riskVeryHigh: '#ef4444',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    backgroundColor: colors.white,
+  },
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 3,
+    borderBottomColor: colors.primary,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 3,
+  },
+  reportTitle: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 2,
+  },
+  fundName: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  dateLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  dateValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  // Section
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 10,
+    paddingBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // Risk Score Overview
+  riskScoreSection: {
+    flexDirection: 'row',
+    gap: 20,
+    marginBottom: 20,
+  },
+  riskScoreCard: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 15,
+    borderRadius: 4,
+    borderLeftWidth: 4,
+  },
+  riskScoreLabel: {
+    fontSize: 9,
+    color: colors.textMuted,
+    marginBottom: 5,
+  },
+  riskScoreValue: {
+    fontSize: 28,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 5,
+  },
+  riskScoreText: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  // Gauge visualization
+  gaugeContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  gaugeLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 200,
+    marginTop: 5,
+  },
+  gaugeLegendText: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  // Metrics Table
+  metricsTable: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  tableHeaderCell: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowAlt: {
+    backgroundColor: colors.background,
+  },
+  tableCell: {
+    fontSize: 9,
+    color: colors.text,
+  },
+  tableCellBold: {
+    fontFamily: 'Helvetica-Bold',
+  },
+  // Column widths for main table
+  colMetric: { width: '35%' },
+  colValue: { width: '20%', textAlign: 'right' as const },
+  colPercentile: { width: '20%', textAlign: 'center' as const },
+  colRating: { width: '25%', textAlign: 'center' as const },
+  // Risk Rating Badge
+  ratingBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+    alignSelf: 'center' as const,
+  },
+  ratingText: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.white,
+    textAlign: 'center' as const,
+  },
+  // VaR Section
+  varSection: {
+    marginBottom: 15,
+  },
+  varGrid: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  varCard: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 4,
+  },
+  varLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  varValue: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.danger,
+    marginBottom: 2,
+  },
+  varSubtext: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  // Distribution Chart
+  distributionSection: {
+    marginBottom: 15,
+  },
+  distributionChart: {
+    height: 100,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  distributionStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  distributionStat: {
+    alignItems: 'center',
+  },
+  distributionLabel: {
+    fontSize: 7,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  distributionValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  // Correlation Matrix
+  correlationSection: {
+    marginBottom: 15,
+  },
+  correlationTable: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  correlationHeaderCell: {
+    width: '16.66%',
+    padding: 6,
+    backgroundColor: colors.primary,
+    color: colors.white,
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center' as const,
+  },
+  correlationCell: {
+    width: '16.66%',
+    padding: 6,
+    fontSize: 8,
+    textAlign: 'center' as const,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  correlationRowHeader: {
+    width: '16.66%',
+    padding: 6,
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    backgroundColor: colors.background,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  // Stress Test Section
+  stressTestSection: {
+    marginBottom: 15,
+  },
+  stressTestGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  stressTestCard: {
+    width: '48%',
+    backgroundColor: colors.background,
+    padding: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.danger,
+  },
+  stressTestName: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  stressTestValue: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.danger,
+    marginBottom: 2,
+  },
+  stressTestDesc: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  // Notes
+  notesBox: {
+    backgroundColor: colors.background,
+    padding: 12,
+    marginTop: 10,
+    borderRadius: 4,
+  },
+  notesTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 5,
+  },
+  notesText: {
+    fontSize: 8,
+    color: colors.textMuted,
+    lineHeight: 1.5,
+  },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 40,
+    right: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerText: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  pageNumber: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+});
+
+// Type definitions
+export interface RiskMetric {
+  name: string;
+  value: number;
+  percentile?: number;
+  rating: 'Low' | 'Medium' | 'High' | 'Very High';
+  description?: string;
+}
+
+export interface VaRData {
+  daily95: number;
+  daily99: number;
+  monthly95: number;
+  monthly99: number;
+  cvar95?: number;
+  cvar99?: number;
+}
+
+export interface DistributionStats {
+  mean: number;
+  median: number;
+  stdDev: number;
+  skewness: number;
+  kurtosis: number;
+  minReturn: number;
+  maxReturn: number;
+  histogram: { bin: number; count: number }[];
+}
+
+export interface CorrelationData {
+  assets: string[];
+  matrix: number[][];
+}
+
+export interface StressTest {
+  name: string;
+  scenario: string;
+  impact: number;
+  description: string;
+}
+
+export interface RiskMetricsData {
+  // Header
+  fundName: string;
+  fundId: string;
+  strategy: string;
+  asOfDate: Date;
+  generatedAt: Date;
+  
+  // Overall risk score
+  overallRiskScore: number; // 1-100
+  riskRating: 'Low' | 'Medium' | 'High' | 'Very High';
+  
+  // Core metrics
+  volatilityMetrics: RiskMetric[];
+  drawdownMetrics: RiskMetric[];
+  ratioMetrics: RiskMetric[];
+  
+  // VaR
+  var: VaRData;
+  
+  // Distribution
+  distribution: DistributionStats;
+  
+  // Correlations
+  correlations?: CorrelationData;
+  
+  // Stress tests
+  stressTests: StressTest[];
+  
+  // Notes
+  notes?: string;
+}
+
+// Helper functions
+const formatPercent = (value: number | undefined, decimals = 2): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+};
+
+const formatNumber = (value: number | undefined, decimals = 2): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return value.toFixed(decimals);
+};
+
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+const getRatingColor = (rating: string): string => {
+  switch (rating) {
+    case 'Low': return colors.riskLow;
+    case 'Medium': return colors.riskMedium;
+    case 'High': return colors.riskHigh;
+    case 'Very High': return colors.riskVeryHigh;
+    default: return colors.textMuted;
+  }
+};
+
+const getCorrelationColor = (value: number): string => {
+  const absValue = Math.abs(value);
+  if (absValue >= 0.8) return value > 0 ? '#ef4444' : '#3b82f6';
+  if (absValue >= 0.6) return value > 0 ? '#f97316' : '#60a5fa';
+  if (absValue >= 0.4) return value > 0 ? '#eab308' : '#93c5fd';
+  if (absValue >= 0.2) return '#d1d5db';
+  return '#f3f4f6';
+};
+
+// Risk Gauge Component
+const RiskGauge: React.FC<{ score: number; width?: number }> = ({ score, width = 200 }) => {
+  const height = 20;
+  const segmentWidth = width / 4;
+  
+  // Calculate needle position
+  const needleX = (score / 100) * width;
+  
+  return (
+    <Svg width={width} height={height + 15}>
+      {/* Background segments */}
+      <G>
+        <Rect x={0} y={0} width={segmentWidth} height={height} fill={colors.riskLow} />
+        <Rect x={segmentWidth} y={0} width={segmentWidth} height={height} fill={colors.riskMedium} />
+        <Rect x={segmentWidth * 2} y={0} width={segmentWidth} height={height} fill={colors.riskHigh} />
+        <Rect x={segmentWidth * 3} y={0} width={segmentWidth} height={height} fill={colors.riskVeryHigh} />
+      </G>
+      {/* Needle indicator */}
+      <Rect x={needleX - 2} y={-3} width={4} height={height + 6} fill={colors.text} />
+    </Svg>
+  );
+};
+
+// Distribution Histogram Component
+const HistogramChart: React.FC<{ 
+  histogram: { bin: number; count: number }[];
+  width: number;
+  height: number;
+}> = ({ histogram, width, height }) => {
+  if (histogram.length === 0) return null;
+
+  const padding = { left: 30, right: 10, top: 10, bottom: 20 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const maxCount = Math.max(...histogram.map(h => h.count));
+  const barWidth = chartWidth / histogram.length - 2;
+
+  return (
+    <Svg width={width} height={height}>
+      {/* Bars */}
+      <G>
+        {histogram.map((h, i) => {
+          const barHeight = (h.count / maxCount) * chartHeight;
+          const x = padding.left + i * (chartWidth / histogram.length) + 1;
+          const y = padding.top + chartHeight - barHeight;
+          const fillColor = h.bin < 0 ? colors.danger : colors.success;
+          
+          return (
+            <Rect
+              key={i}
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill={fillColor}
+            />
+          );
+        })}
+      </G>
+      {/* Zero line */}
+      <Rect
+        x={padding.left + (chartWidth / 2) - 0.5}
+        y={padding.top}
+        width={1}
+        height={chartHeight}
+        fill={colors.text}
+      />
+    </Svg>
+  );
+};
+
+// Rating Badge Component
+const RatingBadge: React.FC<{ rating: string }> = ({ rating }) => (
+  <View style={[styles.ratingBadge, { backgroundColor: getRatingColor(rating) }]}>
+    <Text style={styles.ratingText}>{rating.toUpperCase()}</Text>
+  </View>
+);
+
+// Main Component
+export const RiskMetricsReport: React.FC<{ data: RiskMetricsData }> = ({ data }) => {
+  const {
+    fundName,
+    strategy,
+    asOfDate,
+    generatedAt,
+    overallRiskScore,
+    riskRating,
+    volatilityMetrics,
+    drawdownMetrics,
+    ratioMetrics,
+    var: varData,
+    distribution,
+    correlations,
+    stressTests,
+    notes,
+  } = data;
+
+  return (
+    <Document>
+      {/* Page 1: Risk Overview */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.reportTitle}>Risk Metrics Report</Text>
+            <Text style={styles.fundName}>{fundName} • {strategy}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.dateLabel}>AS OF</Text>
+            <Text style={styles.dateValue}>{formatDate(asOfDate)}</Text>
+          </View>
+        </View>
+
+        {/* Risk Score Overview */}
+        <View style={styles.riskScoreSection}>
+          <View style={[styles.riskScoreCard, { borderLeftColor: getRatingColor(riskRating) }]}>
+            <Text style={styles.riskScoreLabel}>Overall Risk Score</Text>
+            <Text style={[styles.riskScoreValue, { color: getRatingColor(riskRating) }]}>
+              {overallRiskScore}
+            </Text>
+            <View style={styles.gaugeContainer}>
+              <RiskGauge score={overallRiskScore} />
+              <View style={styles.gaugeLegend}>
+                <Text style={styles.gaugeLegendText}>Low</Text>
+                <Text style={styles.gaugeLegendText}>Medium</Text>
+                <Text style={styles.gaugeLegendText}>High</Text>
+                <Text style={styles.gaugeLegendText}>V.High</Text>
+              </View>
+            </View>
+            <Text style={styles.riskScoreText}>
+              Risk Rating: {riskRating}
+            </Text>
+          </View>
+
+          <View style={[styles.riskScoreCard, { borderLeftColor: colors.danger }]}>
+            <Text style={styles.riskScoreLabel}>Value at Risk (95%)</Text>
+            <Text style={styles.varValue}>{formatPercent(varData.monthly95)}</Text>
+            <Text style={styles.riskScoreText}>
+              Monthly potential loss at 95% confidence
+            </Text>
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.riskScoreLabel}>Max Drawdown</Text>
+              <Text style={[styles.riskScoreValue, { fontSize: 18, color: colors.danger }]}>
+                {formatPercent(drawdownMetrics.find(m => m.name === 'Maximum Drawdown')?.value || 0)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Volatility Metrics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Volatility Metrics</Text>
+          <View style={styles.metricsTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.colMetric]}>Metric</Text>
+              <Text style={[styles.tableHeaderCell, styles.colValue]}>Value</Text>
+              <Text style={[styles.tableHeaderCell, styles.colPercentile]}>Percentile</Text>
+              <Text style={[styles.tableHeaderCell, styles.colRating]}>Rating</Text>
+            </View>
+            {volatilityMetrics.map((metric, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <View style={styles.colMetric}>
+                  <Text style={[styles.tableCell, styles.tableCellBold]}>{metric.name}</Text>
+                  {metric.description && (
+                    <Text style={[styles.tableCell, { fontSize: 7, color: colors.textMuted }]}>
+                      {metric.description}
+                    </Text>
+                  )}
+                </View>
+                <Text style={[styles.tableCell, styles.colValue]}>
+                  {formatPercent(metric.value)}
+                </Text>
+                <Text style={[styles.tableCell, styles.colPercentile]}>
+                  {metric.percentile !== undefined ? `${metric.percentile}th` : '-'}
+                </Text>
+                <View style={styles.colRating}>
+                  <RatingBadge rating={metric.rating} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* VaR Section */}
+        <View style={styles.varSection}>
+          <Text style={styles.sectionTitle}>Value at Risk (VaR)</Text>
+          <View style={styles.varGrid}>
+            <View style={styles.varCard}>
+              <Text style={styles.varLabel}>Daily VaR (95%)</Text>
+              <Text style={styles.varValue}>{formatPercent(varData.daily95)}</Text>
+              <Text style={styles.varSubtext}>Max daily loss 5% of the time</Text>
+            </View>
+            <View style={styles.varCard}>
+              <Text style={styles.varLabel}>Daily VaR (99%)</Text>
+              <Text style={styles.varValue}>{formatPercent(varData.daily99)}</Text>
+              <Text style={styles.varSubtext}>Max daily loss 1% of the time</Text>
+            </View>
+            <View style={styles.varCard}>
+              <Text style={styles.varLabel}>Monthly VaR (95%)</Text>
+              <Text style={styles.varValue}>{formatPercent(varData.monthly95)}</Text>
+              <Text style={styles.varSubtext}>Max monthly loss 5% of the time</Text>
+            </View>
+            <View style={styles.varCard}>
+              <Text style={styles.varLabel}>Monthly VaR (99%)</Text>
+              <Text style={styles.varValue}>{formatPercent(varData.monthly99)}</Text>
+              <Text style={styles.varSubtext}>Max monthly loss 1% of the time</Text>
+            </View>
+          </View>
+          {varData.cvar95 !== undefined && (
+            <View style={[styles.varGrid, { marginTop: 10 }]}>
+              <View style={[styles.varCard, { backgroundColor: '#fee2e2' }]}>
+                <Text style={styles.varLabel}>Conditional VaR (95%)</Text>
+                <Text style={styles.varValue}>{formatPercent(varData.cvar95)}</Text>
+                <Text style={styles.varSubtext}>Expected loss when VaR is breached</Text>
+              </View>
+              {varData.cvar99 !== undefined && (
+                <View style={[styles.varCard, { backgroundColor: '#fee2e2' }]}>
+                  <Text style={styles.varLabel}>Conditional VaR (99%)</Text>
+                  <Text style={styles.varValue}>{formatPercent(varData.cvar99)}</Text>
+                  <Text style={styles.varSubtext}>Expected tail loss at 99% confidence</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>HedgeCo Risk Metrics • Confidential</Text>
+          <Text style={styles.footerText}>Generated {formatDate(generatedAt)}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+
+      {/* Page 2: Distribution & Stress Tests */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.reportTitle}>Risk Metrics Report</Text>
+            <Text style={styles.fundName}>{fundName} • Distribution Analysis</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.dateLabel}>AS OF</Text>
+            <Text style={styles.dateValue}>{formatDate(asOfDate)}</Text>
+          </View>
+        </View>
+
+        {/* Return Distribution */}
+        <View style={styles.distributionSection}>
+          <Text style={styles.sectionTitle}>Return Distribution</Text>
+          <View style={styles.distributionChart}>
+            <HistogramChart 
+              histogram={distribution.histogram} 
+              width={515} 
+              height={100} 
+            />
+          </View>
+          <View style={styles.distributionStats}>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Mean</Text>
+              <Text style={styles.distributionValue}>{formatPercent(distribution.mean)}</Text>
+            </View>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Median</Text>
+              <Text style={styles.distributionValue}>{formatPercent(distribution.median)}</Text>
+            </View>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Std Dev</Text>
+              <Text style={styles.distributionValue}>{formatPercent(distribution.stdDev)}</Text>
+            </View>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Skewness</Text>
+              <Text style={styles.distributionValue}>{formatNumber(distribution.skewness)}</Text>
+            </View>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Kurtosis</Text>
+              <Text style={styles.distributionValue}>{formatNumber(distribution.kurtosis)}</Text>
+            </View>
+            <View style={styles.distributionStat}>
+              <Text style={styles.distributionLabel}>Min / Max</Text>
+              <Text style={styles.distributionValue}>
+                {formatPercent(distribution.minReturn, 1)} / {formatPercent(distribution.maxReturn, 1)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Drawdown Metrics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Drawdown Metrics</Text>
+          <View style={styles.metricsTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.colMetric]}>Metric</Text>
+              <Text style={[styles.tableHeaderCell, styles.colValue]}>Value</Text>
+              <Text style={[styles.tableHeaderCell, styles.colPercentile]}>Percentile</Text>
+              <Text style={[styles.tableHeaderCell, styles.colRating]}>Rating</Text>
+            </View>
+            {drawdownMetrics.map((metric, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <View style={styles.colMetric}>
+                  <Text style={[styles.tableCell, styles.tableCellBold]}>{metric.name}</Text>
+                </View>
+                <Text style={[styles.tableCell, styles.colValue, { color: colors.danger }]}>
+                  {formatPercent(metric.value)}
+                </Text>
+                <Text style={[styles.tableCell, styles.colPercentile]}>
+                  {metric.percentile !== undefined ? `${metric.percentile}th` : '-'}
+                </Text>
+                <View style={styles.colRating}>
+                  <RatingBadge rating={metric.rating} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Ratio Metrics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Risk-Adjusted Ratios</Text>
+          <View style={styles.metricsTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.colMetric]}>Metric</Text>
+              <Text style={[styles.tableHeaderCell, styles.colValue]}>Value</Text>
+              <Text style={[styles.tableHeaderCell, styles.colPercentile]}>Percentile</Text>
+              <Text style={[styles.tableHeaderCell, styles.colRating]}>Rating</Text>
+            </View>
+            {ratioMetrics.map((metric, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <View style={styles.colMetric}>
+                  <Text style={[styles.tableCell, styles.tableCellBold]}>{metric.name}</Text>
+                </View>
+                <Text style={[styles.tableCell, styles.colValue]}>
+                  {formatNumber(metric.value)}
+                </Text>
+                <Text style={[styles.tableCell, styles.colPercentile]}>
+                  {metric.percentile !== undefined ? `${metric.percentile}th` : '-'}
+                </Text>
+                <View style={styles.colRating}>
+                  <RatingBadge rating={metric.rating} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Stress Tests */}
+        <View style={styles.stressTestSection}>
+          <Text style={styles.sectionTitle}>Stress Test Scenarios</Text>
+          <View style={styles.stressTestGrid}>
+            {stressTests.map((test, idx) => (
+              <View key={idx} style={styles.stressTestCard}>
+                <Text style={styles.stressTestName}>{test.name}</Text>
+                <Text style={styles.stressTestValue}>{formatPercent(test.impact)}</Text>
+                <Text style={styles.stressTestDesc}>{test.description}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Correlation Matrix */}
+        {correlations && correlations.matrix.length > 0 && (
+          <View style={styles.correlationSection}>
+            <Text style={styles.sectionTitle}>Asset Correlation Matrix</Text>
+            <View style={styles.correlationTable}>
+              {/* Header row */}
+              <View style={styles.tableRow}>
+                <Text style={styles.correlationHeaderCell}></Text>
+                {correlations.assets.map((asset, i) => (
+                  <Text key={i} style={styles.correlationHeaderCell}>
+                    {asset.length > 8 ? asset.slice(0, 6) + '..' : asset}
+                  </Text>
+                ))}
+              </View>
+              {/* Data rows */}
+              {correlations.matrix.map((row, i) => (
+                <View key={i} style={styles.tableRow}>
+                  <Text style={styles.correlationRowHeader}>
+                    {correlations.assets[i].length > 8 
+                      ? correlations.assets[i].slice(0, 6) + '..' 
+                      : correlations.assets[i]}
+                  </Text>
+                  {row.map((val, j) => (
+                    <Text 
+                      key={j} 
+                      style={[
+                        styles.correlationCell,
+                        { backgroundColor: getCorrelationColor(val) }
+                      ]}
+                    >
+                      {val.toFixed(2)}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Notes */}
+        {notes && (
+          <View style={styles.notesBox}>
+            <Text style={styles.notesTitle}>Notes & Methodology</Text>
+            <Text style={styles.notesText}>{notes}</Text>
+          </View>
+        )}
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>HedgeCo Risk Metrics • Confidential</Text>
+          <Text style={styles.footerText}>Generated {formatDate(generatedAt)}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default RiskMetricsReport;

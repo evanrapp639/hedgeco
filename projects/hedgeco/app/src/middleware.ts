@@ -5,10 +5,16 @@
  * - Adds security headers (CSP, X-Frame-Options, etc.)
  * - Handles authentication redirects
  * - Implements basic rate limiting headers
+ * - Tracks request timing and logging
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
+// Generate unique request ID
+function generateRequestId(): string {
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 // Security headers configuration
 const securityHeaders = {
@@ -87,6 +93,8 @@ const publicRoutes = [
   '/api/auth/reset-password',
   '/api/auth/verify-email',
   '/api/webhooks',
+  '/api/health',
+  '/api/health/ready',
 ];
 
 // Routes that require admin access
@@ -135,6 +143,8 @@ function isStaticFile(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const startTime = Date.now();
+  const requestId = generateRequestId();
 
   // Skip middleware for static files
   if (isStaticFile(pathname)) {
@@ -144,10 +154,28 @@ export async function middleware(request: NextRequest) {
   // Create response with security headers
   const response = NextResponse.next();
 
+  // Add request tracking headers
+  response.headers.set('X-Request-ID', requestId);
+  response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
+
   // Add security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+
+  // Log API requests in production
+  if (pathname.startsWith('/api/') && process.env.NODE_ENV === 'production') {
+    const logEntry = {
+      type: 'request',
+      requestId,
+      method: request.method,
+      path: pathname,
+      userAgent: request.headers.get('user-agent') || undefined,
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      timestamp: new Date().toISOString(),
+    };
+    console.log(JSON.stringify(logEntry));
+  }
 
   // Skip auth checks for public routes
   if (matchesRoute(pathname, publicRoutes)) {

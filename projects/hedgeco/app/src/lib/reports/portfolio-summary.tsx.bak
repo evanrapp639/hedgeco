@@ -1,0 +1,600 @@
+/**
+ * Portfolio Summary PDF Template
+ * Sprint 8: HedgeCo.Net
+ * 
+ * Professional portfolio overview report using @react-pdf/renderer
+ */
+
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+} from '@react-pdf/renderer';
+
+// Color palette
+const colors = {
+  primary: '#1a365d',
+  secondary: '#2c5282',
+  accent: '#0ea5e9',
+  success: '#16a34a',
+  danger: '#dc2626',
+  warning: '#f59e0b',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  background: '#f8fafc',
+  white: '#ffffff',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    backgroundColor: colors.white,
+  },
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 3,
+    borderBottomColor: colors.primary,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 5,
+  },
+  reportTitle: {
+    fontSize: 16,
+    color: colors.secondary,
+    marginBottom: 2,
+  },
+  reportSubtitle: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  dateLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  dateValue: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  // Executive Summary
+  executiveSummary: {
+    backgroundColor: colors.background,
+    padding: 15,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  summaryTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 10,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  summaryItem: {
+    width: '25%',
+    paddingRight: 10,
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  summaryValuePositive: {
+    color: colors.success,
+  },
+  summaryValueNegative: {
+    color: colors.danger,
+  },
+  // Section
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 10,
+    paddingBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // Allocation Table
+  allocationTable: {
+    marginBottom: 15,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  tableHeaderCell: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowAlt: {
+    backgroundColor: colors.background,
+  },
+  tableCell: {
+    fontSize: 9,
+    color: colors.text,
+  },
+  tableCellBold: {
+    fontFamily: 'Helvetica-Bold',
+  },
+  // Column widths
+  colStrategy: { width: '25%' },
+  colAllocation: { width: '15%', textAlign: 'right' as const },
+  colValue: { width: '20%', textAlign: 'right' as const },
+  colReturn: { width: '15%', textAlign: 'right' as const },
+  colContribution: { width: '15%', textAlign: 'right' as const },
+  colFunds: { width: '10%', textAlign: 'right' as const },
+  // Holdings
+  holdingsTable: {
+    marginTop: 10,
+  },
+  holdingRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  holdingName: {
+    width: '30%',
+    fontSize: 9,
+  },
+  holdingStrategy: {
+    width: '15%',
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  holdingWeight: {
+    width: '12%',
+    fontSize: 9,
+    textAlign: 'right' as const,
+  },
+  holdingValue: {
+    width: '18%',
+    fontSize: 9,
+    textAlign: 'right' as const,
+  },
+  holdingReturn: {
+    width: '12%',
+    fontSize: 9,
+    textAlign: 'right' as const,
+  },
+  holdingContrib: {
+    width: '13%',
+    fontSize: 9,
+    textAlign: 'right' as const,
+  },
+  // Allocation Bar
+  allocationBarContainer: {
+    flexDirection: 'row',
+    height: 20,
+    marginTop: 10,
+    marginBottom: 15,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  allocationBarSegment: {
+    height: '100%',
+  },
+  allocationLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    marginBottom: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    marginRight: 5,
+    borderRadius: 2,
+  },
+  legendText: {
+    fontSize: 8,
+    color: colors.text,
+  },
+  // Notes
+  notesBox: {
+    backgroundColor: colors.background,
+    padding: 12,
+    marginTop: 10,
+    borderRadius: 4,
+  },
+  notesTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 5,
+  },
+  notesText: {
+    fontSize: 8,
+    color: colors.textMuted,
+    lineHeight: 1.5,
+  },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 40,
+    right: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerText: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  pageNumber: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+});
+
+// Type definitions
+export interface PortfolioFund {
+  id: string;
+  name: string;
+  strategy: string;
+  allocation: number; // percentage
+  marketValue: number;
+  costBasis?: number;
+  mtdReturn: number;
+  ytdReturn: number;
+  contribution: number; // contribution to portfolio return
+}
+
+export interface StrategyAllocation {
+  strategy: string;
+  allocation: number;
+  marketValue: number;
+  ytdReturn: number;
+  contribution: number;
+  fundCount: number;
+  color: string;
+}
+
+export interface PortfolioSummaryData {
+  // Header
+  portfolioName: string;
+  investorName?: string;
+  asOfDate: Date;
+  generatedAt: Date;
+  
+  // Summary metrics
+  totalValue: number;
+  totalCostBasis?: number;
+  mtdReturn: number;
+  ytdReturn: number;
+  oneYearReturn?: number;
+  inceptionReturn?: number;
+  inceptionDate?: Date;
+  
+  // Allocations
+  strategyAllocations: StrategyAllocation[];
+  
+  // Holdings
+  holdings: PortfolioFund[];
+  
+  // Optional notes
+  notes?: string;
+}
+
+// Helper functions
+const formatCurrency = (value: number): string => {
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+  if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+  return `$${value.toLocaleString()}`;
+};
+
+const formatPercent = (value: number, decimals = 2): string => {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+};
+
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+
+const getReturnStyle = (value: number) => {
+  return value >= 0 ? styles.summaryValuePositive : styles.summaryValueNegative;
+};
+
+// Summary Item Component
+const SummaryItem: React.FC<{
+  label: string;
+  value: string;
+  isReturn?: boolean;
+  rawValue?: number;
+}> = ({ label, value, isReturn, rawValue }) => (
+  <View style={styles.summaryItem}>
+    <Text style={styles.summaryLabel}>{label}</Text>
+    <Text style={[
+      styles.summaryValue,
+      isReturn && rawValue !== undefined && getReturnStyle(rawValue)
+    ]}>
+      {value}
+    </Text>
+  </View>
+);
+
+// Main Component
+export const PortfolioSummaryReport: React.FC<{ data: PortfolioSummaryData }> = ({ data }) => {
+  const {
+    portfolioName,
+    investorName,
+    asOfDate,
+    totalValue,
+    totalCostBasis,
+    mtdReturn,
+    ytdReturn,
+    oneYearReturn,
+    inceptionReturn,
+    strategyAllocations,
+    holdings,
+    notes,
+  } = data;
+
+  // Calculate unrealized gain/loss
+  const unrealizedGain = totalCostBasis ? totalValue - totalCostBasis : null;
+  const unrealizedGainPct = totalCostBasis ? ((totalValue / totalCostBasis) - 1) * 100 : null;
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.reportTitle}>Portfolio Summary Report</Text>
+            <Text style={styles.reportSubtitle}>
+              {portfolioName}{investorName ? ` • ${investorName}` : ''}
+            </Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.dateLabel}>AS OF</Text>
+            <Text style={styles.dateValue}>{formatDate(asOfDate)}</Text>
+          </View>
+        </View>
+
+        {/* Executive Summary */}
+        <View style={styles.executiveSummary}>
+          <Text style={styles.summaryTitle}>Executive Summary</Text>
+          <View style={styles.summaryGrid}>
+            <SummaryItem label="Total Portfolio Value" value={formatCurrency(totalValue)} />
+            <SummaryItem label="MTD Return" value={formatPercent(mtdReturn)} isReturn rawValue={mtdReturn} />
+            <SummaryItem label="YTD Return" value={formatPercent(ytdReturn)} isReturn rawValue={ytdReturn} />
+            <SummaryItem 
+              label="1 Year Return" 
+              value={oneYearReturn !== undefined ? formatPercent(oneYearReturn) : 'N/A'} 
+              isReturn 
+              rawValue={oneYearReturn} 
+            />
+            {unrealizedGain !== null && (
+              <>
+                <SummaryItem label="Cost Basis" value={formatCurrency(totalCostBasis!)} />
+                <SummaryItem 
+                  label="Unrealized Gain/Loss" 
+                  value={formatCurrency(unrealizedGain)} 
+                  isReturn 
+                  rawValue={unrealizedGain} 
+                />
+                <SummaryItem 
+                  label="Unrealized %" 
+                  value={formatPercent(unrealizedGainPct!)} 
+                  isReturn 
+                  rawValue={unrealizedGainPct!} 
+                />
+              </>
+            )}
+            {inceptionReturn !== undefined && (
+              <SummaryItem 
+                label="Since Inception" 
+                value={formatPercent(inceptionReturn)} 
+                isReturn 
+                rawValue={inceptionReturn} 
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Strategy Allocation */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Allocation by Strategy</Text>
+          
+          {/* Allocation Bar */}
+          <View style={styles.allocationBarContainer}>
+            {strategyAllocations.map((alloc, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.allocationBarSegment,
+                  { width: `${alloc.allocation}%`, backgroundColor: alloc.color }
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Legend */}
+          <View style={styles.allocationLegend}>
+            {strategyAllocations.map((alloc, idx) => (
+              <View key={idx} style={styles.legendItem}>
+                <View style={[styles.legendColor, { backgroundColor: alloc.color }]} />
+                <Text style={styles.legendText}>
+                  {alloc.strategy} ({alloc.allocation.toFixed(1)}%)
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Allocation Table */}
+          <View style={styles.allocationTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.colStrategy]}>Strategy</Text>
+              <Text style={[styles.tableHeaderCell, styles.colAllocation]}>Allocation</Text>
+              <Text style={[styles.tableHeaderCell, styles.colValue]}>Market Value</Text>
+              <Text style={[styles.tableHeaderCell, styles.colReturn]}>YTD Return</Text>
+              <Text style={[styles.tableHeaderCell, styles.colContribution]}>Contribution</Text>
+              <Text style={[styles.tableHeaderCell, styles.colFunds]}>Funds</Text>
+            </View>
+            {strategyAllocations.map((alloc, idx) => (
+              <View 
+                key={idx} 
+                style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
+              >
+                <Text style={[styles.tableCell, styles.colStrategy, styles.tableCellBold]}>
+                  {alloc.strategy}
+                </Text>
+                <Text style={[styles.tableCell, styles.colAllocation]}>
+                  {alloc.allocation.toFixed(1)}%
+                </Text>
+                <Text style={[styles.tableCell, styles.colValue]}>
+                  {formatCurrency(alloc.marketValue)}
+                </Text>
+                <Text style={[
+                  styles.tableCell, 
+                  styles.colReturn,
+                  { color: alloc.ytdReturn >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(alloc.ytdReturn)}
+                </Text>
+                <Text style={[
+                  styles.tableCell, 
+                  styles.colContribution,
+                  { color: alloc.contribution >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(alloc.contribution, 3)}
+                </Text>
+                <Text style={[styles.tableCell, styles.colFunds]}>
+                  {alloc.fundCount}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Holdings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Portfolio Holdings</Text>
+          <View style={styles.holdingsTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.holdingName]}>Fund Name</Text>
+              <Text style={[styles.tableHeaderCell, styles.holdingStrategy]}>Strategy</Text>
+              <Text style={[styles.tableHeaderCell, styles.holdingWeight]}>Weight</Text>
+              <Text style={[styles.tableHeaderCell, styles.holdingValue]}>Market Value</Text>
+              <Text style={[styles.tableHeaderCell, styles.holdingReturn]}>YTD</Text>
+              <Text style={[styles.tableHeaderCell, styles.holdingContrib]}>Contrib</Text>
+            </View>
+            {holdings.slice(0, 15).map((fund, idx) => (
+              <View 
+                key={fund.id} 
+                style={[styles.holdingRow, idx % 2 === 1 && styles.tableRowAlt]}
+              >
+                <Text style={[styles.holdingName, styles.tableCellBold]}>
+                  {fund.name.length > 25 ? fund.name.slice(0, 22) + '...' : fund.name}
+                </Text>
+                <Text style={styles.holdingStrategy}>{fund.strategy}</Text>
+                <Text style={styles.holdingWeight}>{fund.allocation.toFixed(1)}%</Text>
+                <Text style={styles.holdingValue}>{formatCurrency(fund.marketValue)}</Text>
+                <Text style={[
+                  styles.holdingReturn,
+                  { color: fund.ytdReturn >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(fund.ytdReturn)}
+                </Text>
+                <Text style={[
+                  styles.holdingContrib,
+                  { color: fund.contribution >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(fund.contribution, 3)}
+                </Text>
+              </View>
+            ))}
+          </View>
+          {holdings.length > 15 && (
+            <Text style={[styles.notesText, { marginTop: 5 }]}>
+              Showing top 15 of {holdings.length} holdings. See detailed holdings report for complete list.
+            </Text>
+          )}
+        </View>
+
+        {/* Notes */}
+        {notes && (
+          <View style={styles.notesBox}>
+            <Text style={styles.notesTitle}>Notes</Text>
+            <Text style={styles.notesText}>{notes}</Text>
+          </View>
+        )}
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>
+            HedgeCo Portfolio Summary • Confidential
+          </Text>
+          <Text style={styles.footerText}>
+            Generated {formatDate(data.generatedAt)}
+          </Text>
+          <Text 
+            style={styles.pageNumber} 
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} 
+          />
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default PortfolioSummaryReport;

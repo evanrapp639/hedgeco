@@ -1,0 +1,982 @@
+/**
+ * Quarterly Review PDF Template
+ * Sprint 8: HedgeCo.Net
+ * 
+ * Comprehensive quarterly report combining portfolio, performance, and risk analysis
+ */
+
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Svg,
+  Rect,
+  G,
+} from '@react-pdf/renderer';
+
+// Color palette
+const colors = {
+  primary: '#1a365d',
+  secondary: '#2c5282',
+  accent: '#0ea5e9',
+  success: '#16a34a',
+  danger: '#dc2626',
+  warning: '#f59e0b',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  background: '#f8fafc',
+  white: '#ffffff',
+  // Chart colors
+  chart1: '#0ea5e9',
+  chart2: '#8b5cf6',
+  chart3: '#f59e0b',
+  chart4: '#22c55e',
+  chart5: '#ef4444',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    backgroundColor: colors.white,
+  },
+  // Cover page
+  coverPage: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 60,
+  },
+  coverLogo: {
+    fontSize: 48,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 20,
+  },
+  coverTitle: {
+    fontSize: 28,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  coverSubtitle: {
+    fontSize: 16,
+    color: colors.secondary,
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  coverPeriod: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.accent,
+    marginBottom: 60,
+  },
+  coverInfo: {
+    marginTop: 'auto',
+    alignItems: 'center',
+  },
+  coverInfoText: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginBottom: 5,
+  },
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 2,
+  },
+  pageTitle: {
+    fontSize: 12,
+    color: colors.secondary,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  quarterLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  quarterValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+  },
+  // Section
+  section: {
+    marginBottom: 18,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // Executive Summary
+  executiveSummary: {
+    backgroundColor: colors.background,
+    padding: 15,
+    marginBottom: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  summaryText: {
+    fontSize: 10,
+    lineHeight: 1.6,
+    color: colors.text,
+  },
+  // Highlights Grid
+  highlightsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 15,
+  },
+  highlightCard: {
+    width: '23%',
+    backgroundColor: colors.background,
+    padding: 10,
+    borderRadius: 4,
+  },
+  highlightLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    marginBottom: 3,
+  },
+  highlightValue: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  highlightChange: {
+    fontSize: 8,
+    marginTop: 3,
+  },
+  // Performance Table
+  performanceTable: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 15,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  tableHeaderCell: {
+    color: colors.white,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center' as const,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowAlt: {
+    backgroundColor: colors.background,
+  },
+  tableCell: {
+    fontSize: 8,
+    textAlign: 'center' as const,
+    color: colors.text,
+  },
+  tableCellLeft: {
+    textAlign: 'left' as const,
+    fontFamily: 'Helvetica-Bold',
+  },
+  // Allocation Bars
+  allocationBars: {
+    marginBottom: 15,
+  },
+  allocationBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  allocationLabel: {
+    width: '25%',
+    fontSize: 8,
+    color: colors.text,
+  },
+  allocationBarContainer: {
+    width: '55%',
+    height: 12,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  allocationBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  allocationValue: {
+    width: '20%',
+    fontSize: 8,
+    textAlign: 'right' as const,
+    color: colors.text,
+  },
+  // Market Commentary
+  commentaryBox: {
+    backgroundColor: colors.background,
+    padding: 12,
+    marginBottom: 15,
+    borderRadius: 4,
+  },
+  commentaryTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 6,
+  },
+  commentaryText: {
+    fontSize: 9,
+    lineHeight: 1.5,
+    color: colors.text,
+  },
+  // Holdings Table
+  holdingsTable: {
+    marginBottom: 15,
+  },
+  holdingRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // Chart placeholder
+  chartPlaceholder: {
+    height: 120,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  chartText: {
+    fontSize: 9,
+    color: colors.textMuted,
+  },
+  // Mini bar chart
+  miniBarChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 80,
+    gap: 4,
+    paddingTop: 10,
+  },
+  miniBar: {
+    width: 20,
+    backgroundColor: colors.chart1,
+  },
+  miniBarLabel: {
+    fontSize: 6,
+    color: colors.textMuted,
+    textAlign: 'center' as const,
+    marginTop: 4,
+  },
+  // Key Metrics
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  metricItem: {
+    flex: 1,
+    padding: 8,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  metricItemLast: {
+    borderRightWidth: 0,
+  },
+  metricLabel: {
+    fontSize: 7,
+    color: colors.textMuted,
+    marginBottom: 3,
+  },
+  metricValue: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  // Activity Timeline
+  timeline: {
+    marginLeft: 10,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    paddingLeft: 15,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.border,
+  },
+  timelineDate: {
+    width: '20%',
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  timelineContent: {
+    width: '80%',
+  },
+  timelineTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  timelineDesc: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  // Outlook
+  outlookSection: {
+    backgroundColor: '#f0f9ff',
+    padding: 15,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  outlookTitle: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  outlookText: {
+    fontSize: 9,
+    lineHeight: 1.5,
+    color: colors.text,
+  },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 40,
+    right: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerText: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  pageNumber: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  // Table of Contents
+  tocItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tocLabel: {
+    fontSize: 10,
+    color: colors.text,
+  },
+  tocPage: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+});
+
+// Type definitions
+export interface QuarterlyHighlight {
+  label: string;
+  value: string;
+  change?: number;
+  changeLabel?: string;
+}
+
+export interface PerformanceRow {
+  period: string;
+  fund: number;
+  benchmark?: number;
+  alpha?: number;
+}
+
+export interface AllocationItem {
+  name: string;
+  allocation: number;
+  previousAllocation?: number;
+  color: string;
+}
+
+export interface TopHolding {
+  rank: number;
+  name: string;
+  strategy: string;
+  weight: number;
+  quarterReturn: number;
+  contribution: number;
+}
+
+export interface TimelineEvent {
+  date: string;
+  title: string;
+  description: string;
+  type: 'trade' | 'rebalance' | 'distribution' | 'meeting' | 'other';
+}
+
+export interface QuarterlyReviewData {
+  // Header
+  portfolioName: string;
+  investorName?: string;
+  quarter: string; // e.g., "Q4 2025"
+  periodStart: Date;
+  periodEnd: Date;
+  generatedAt: Date;
+  
+  // Executive summary
+  executiveSummary: string;
+  
+  // Highlights
+  highlights: QuarterlyHighlight[];
+  
+  // Performance
+  quarterReturn: number;
+  ytdReturn: number;
+  oneYearReturn?: number;
+  sinceInceptionReturn: number;
+  benchmarkName?: string;
+  performanceTable: PerformanceRow[];
+  monthlyReturns: { month: string; return: number }[];
+  
+  // Portfolio
+  totalValue: number;
+  previousValue: number;
+  netContributions: number;
+  distributions: number;
+  allocations: AllocationItem[];
+  topHoldings: TopHolding[];
+  
+  // Risk
+  volatility: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  currentDrawdown: number;
+  
+  // Activity
+  activity: TimelineEvent[];
+  
+  // Market commentary
+  marketCommentary: string;
+  
+  // Outlook
+  outlook: string;
+  
+  // Contact
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+// Helper functions
+const formatCurrency = (value: number): string => {
+  if (Math.abs(value) >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+  if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+  return `$${value.toLocaleString()}`;
+};
+
+const formatPercent = (value: number | undefined, decimals = 2): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+};
+
+const formatNumber = (value: number, decimals = 2): string => {
+  return value.toFixed(decimals);
+};
+
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+
+const formatShortDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+// Mini Bar Chart Component
+const MiniBarChart: React.FC<{ data: { month: string; return: number }[] }> = ({ data }) => {
+  const maxAbs = Math.max(...data.map(d => Math.abs(d.return)), 1);
+  const chartHeight = 60;
+  
+  return (
+    <Svg width={515} height={100}>
+      {/* Zero line */}
+      <Rect x={0} y={chartHeight / 2 + 10} width={515} height={1} fill={colors.border} />
+      
+      {/* Bars */}
+      <G>
+        {data.map((d, i) => {
+          const barHeight = (Math.abs(d.return) / maxAbs) * (chartHeight / 2);
+          const barWidth = 515 / data.length - 8;
+          const x = i * (515 / data.length) + 4;
+          const y = d.return >= 0 
+            ? chartHeight / 2 + 10 - barHeight 
+            : chartHeight / 2 + 10;
+          
+          return (
+            <Rect
+              key={i}
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill={d.return >= 0 ? colors.success : colors.danger}
+            />
+          );
+        })}
+      </G>
+    </Svg>
+  );
+};
+
+// Highlight Card Component
+const HighlightCard: React.FC<{ item: QuarterlyHighlight }> = ({ item }) => (
+  <View style={styles.highlightCard}>
+    <Text style={styles.highlightLabel}>{item.label}</Text>
+    <Text style={styles.highlightValue}>{item.value}</Text>
+    {item.change !== undefined && (
+      <Text style={[
+        styles.highlightChange,
+        { color: item.change >= 0 ? colors.success : colors.danger }
+      ]}>
+        {item.change >= 0 ? '↑' : '↓'} {item.changeLabel || formatPercent(item.change)}
+      </Text>
+    )}
+  </View>
+);
+
+// Main Component
+export const QuarterlyReviewReport: React.FC<{ data: QuarterlyReviewData }> = ({ data }) => {
+  const {
+    portfolioName,
+    investorName,
+    quarter,
+    periodStart,
+    periodEnd,
+    generatedAt,
+    executiveSummary,
+    highlights,
+    performanceTable,
+    monthlyReturns,
+    totalValue,
+    previousValue,
+    netContributions,
+    distributions,
+    allocations,
+    topHoldings,
+    volatility,
+    sharpeRatio,
+    maxDrawdown,
+    currentDrawdown,
+    activity,
+    marketCommentary,
+    outlook,
+    benchmarkName,
+    contactName,
+    contactEmail,
+    contactPhone,
+  } = data;
+
+  const valueChange = totalValue - previousValue;
+  const valueChangePercent = ((totalValue / previousValue) - 1) * 100;
+
+  return (
+    <Document>
+      {/* Cover Page */}
+      <Page size="A4" style={[styles.page, styles.coverPage]}>
+        <Text style={styles.coverLogo}>HedgeCo</Text>
+        <Text style={styles.coverTitle}>Quarterly Investment Review</Text>
+        <Text style={styles.coverSubtitle}>{portfolioName}</Text>
+        <Text style={styles.coverPeriod}>{quarter}</Text>
+        
+        <View style={styles.coverInfo}>
+          {investorName && (
+            <Text style={styles.coverInfoText}>Prepared for: {investorName}</Text>
+          )}
+          <Text style={styles.coverInfoText}>
+            Period: {formatShortDate(periodStart)} - {formatShortDate(periodEnd)}
+          </Text>
+          <Text style={styles.coverInfoText}>
+            Report Date: {formatDate(generatedAt)}
+          </Text>
+        </View>
+      </Page>
+
+      {/* Page 1: Executive Summary & Performance */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.pageTitle}>Performance Overview</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.quarterLabel}>{quarter}</Text>
+            <Text style={styles.quarterValue}>{portfolioName}</Text>
+          </View>
+        </View>
+
+        {/* Executive Summary */}
+        <View style={styles.executiveSummary}>
+          <Text style={styles.summaryText}>{executiveSummary}</Text>
+        </View>
+
+        {/* Highlights */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quarter Highlights</Text>
+          <View style={styles.highlightsGrid}>
+            {highlights.map((item, idx) => (
+              <HighlightCard key={idx} item={item} />
+            ))}
+          </View>
+        </View>
+
+        {/* Portfolio Value */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Portfolio Value</Text>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Ending Value</Text>
+              <Text style={styles.metricValue}>{formatCurrency(totalValue)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Beginning Value</Text>
+              <Text style={styles.metricValue}>{formatCurrency(previousValue)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Change</Text>
+              <Text style={[styles.metricValue, { color: valueChange >= 0 ? colors.success : colors.danger }]}>
+                {formatCurrency(valueChange)}
+              </Text>
+            </View>
+            <View style={[styles.metricItem, styles.metricItemLast]}>
+              <Text style={styles.metricLabel}>% Change</Text>
+              <Text style={[styles.metricValue, { color: valueChangePercent >= 0 ? colors.success : colors.danger }]}>
+                {formatPercent(valueChangePercent)}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Net Contributions</Text>
+              <Text style={styles.metricValue}>{formatCurrency(netContributions)}</Text>
+            </View>
+            <View style={[styles.metricItem, styles.metricItemLast]}>
+              <Text style={styles.metricLabel}>Distributions</Text>
+              <Text style={styles.metricValue}>{formatCurrency(distributions)}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Performance Table */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Performance Summary</Text>
+          <View style={styles.performanceTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, { width: '25%', textAlign: 'left' as const }]}>Period</Text>
+              <Text style={[styles.tableHeaderCell, { width: '25%' }]}>Portfolio</Text>
+              {benchmarkName && (
+                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>{benchmarkName}</Text>
+              )}
+              {benchmarkName && (
+                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>Alpha</Text>
+              )}
+            </View>
+            {performanceTable.map((row, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <Text style={[styles.tableCell, { width: '25%' }, styles.tableCellLeft]}>{row.period}</Text>
+                <Text style={[
+                  styles.tableCell, 
+                  { width: '25%' },
+                  { color: row.fund >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(row.fund)}
+                </Text>
+                {benchmarkName && (
+                  <Text style={[
+                    styles.tableCell, 
+                    { width: '25%' },
+                    { color: (row.benchmark || 0) >= 0 ? colors.success : colors.danger }
+                  ]}>
+                    {row.benchmark !== undefined ? formatPercent(row.benchmark) : '-'}
+                  </Text>
+                )}
+                {benchmarkName && (
+                  <Text style={[
+                    styles.tableCell, 
+                    { width: '25%' },
+                    { color: (row.alpha || 0) >= 0 ? colors.success : colors.danger }
+                  ]}>
+                    {row.alpha !== undefined ? formatPercent(row.alpha) : '-'}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Monthly Returns Chart */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Monthly Returns</Text>
+          <MiniBarChart data={monthlyReturns} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+            {monthlyReturns.map((m, i) => (
+              <Text key={i} style={{ fontSize: 7, color: colors.textMuted, width: `${100 / monthlyReturns.length}%`, textAlign: 'center' as const }}>
+                {m.month}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>HedgeCo Quarterly Review • Confidential</Text>
+          <Text style={styles.footerText}>{quarter}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+
+      {/* Page 2: Portfolio & Risk */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.pageTitle}>Portfolio Analysis</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.quarterLabel}>{quarter}</Text>
+            <Text style={styles.quarterValue}>{portfolioName}</Text>
+          </View>
+        </View>
+
+        {/* Allocation */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Asset Allocation</Text>
+          <View style={styles.allocationBars}>
+            {allocations.map((item, idx) => (
+              <View key={idx} style={styles.allocationBarRow}>
+                <Text style={styles.allocationLabel}>{item.name}</Text>
+                <View style={styles.allocationBarContainer}>
+                  <View style={[
+                    styles.allocationBar, 
+                    { width: `${item.allocation}%`, backgroundColor: item.color }
+                  ]} />
+                </View>
+                <Text style={styles.allocationValue}>
+                  {item.allocation.toFixed(1)}%
+                  {item.previousAllocation !== undefined && (
+                    <Text style={{ color: item.allocation > item.previousAllocation ? colors.success : colors.danger }}>
+                      {' '}({item.allocation > item.previousAllocation ? '+' : ''}{(item.allocation - item.previousAllocation).toFixed(1)})
+                    </Text>
+                  )}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Top Holdings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Top Holdings</Text>
+          <View style={styles.performanceTable}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, { width: '5%' }]}>#</Text>
+              <Text style={[styles.tableHeaderCell, { width: '30%', textAlign: 'left' as const }]}>Fund Name</Text>
+              <Text style={[styles.tableHeaderCell, { width: '20%' }]}>Strategy</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Weight</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>QTD</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Contrib</Text>
+            </View>
+            {topHoldings.slice(0, 10).map((holding, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <Text style={[styles.tableCell, { width: '5%' }]}>{holding.rank}</Text>
+                <Text style={[styles.tableCell, { width: '30%', textAlign: 'left' as const }]}>
+                  {holding.name.length > 20 ? holding.name.slice(0, 18) + '...' : holding.name}
+                </Text>
+                <Text style={[styles.tableCell, { width: '20%', fontSize: 7 }]}>{holding.strategy}</Text>
+                <Text style={[styles.tableCell, { width: '15%' }]}>{holding.weight.toFixed(1)}%</Text>
+                <Text style={[
+                  styles.tableCell, 
+                  { width: '15%' },
+                  { color: holding.quarterReturn >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(holding.quarterReturn)}
+                </Text>
+                <Text style={[
+                  styles.tableCell, 
+                  { width: '15%' },
+                  { color: holding.contribution >= 0 ? colors.success : colors.danger }
+                ]}>
+                  {formatPercent(holding.contribution, 3)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Risk Metrics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Risk Metrics</Text>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Volatility (Ann.)</Text>
+              <Text style={styles.metricValue}>{formatPercent(volatility)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Sharpe Ratio</Text>
+              <Text style={styles.metricValue}>{formatNumber(sharpeRatio)}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Text style={styles.metricLabel}>Max Drawdown</Text>
+              <Text style={[styles.metricValue, { color: colors.danger }]}>{formatPercent(maxDrawdown)}</Text>
+            </View>
+            <View style={[styles.metricItem, styles.metricItemLast]}>
+              <Text style={styles.metricLabel}>Current Drawdown</Text>
+              <Text style={[styles.metricValue, { color: currentDrawdown < 0 ? colors.warning : colors.success }]}>
+                {formatPercent(currentDrawdown)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Activity Timeline */}
+        {activity.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quarter Activity</Text>
+            <View style={styles.timeline}>
+              {activity.slice(0, 5).map((event, idx) => (
+                <View key={idx} style={styles.timelineItem}>
+                  <Text style={styles.timelineDate}>{event.date}</Text>
+                  <View style={styles.timelineContent}>
+                    <Text style={styles.timelineTitle}>{event.title}</Text>
+                    <Text style={styles.timelineDesc}>{event.description}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>HedgeCo Quarterly Review • Confidential</Text>
+          <Text style={styles.footerText}>{quarter}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+
+      {/* Page 3: Commentary & Outlook */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.pageTitle}>Market Commentary & Outlook</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.quarterLabel}>{quarter}</Text>
+            <Text style={styles.quarterValue}>{portfolioName}</Text>
+          </View>
+        </View>
+
+        {/* Market Commentary */}
+        <View style={styles.commentaryBox}>
+          <Text style={styles.commentaryTitle}>Market Commentary</Text>
+          <Text style={styles.commentaryText}>{marketCommentary}</Text>
+        </View>
+
+        {/* Outlook */}
+        <View style={styles.outlookSection}>
+          <Text style={styles.outlookTitle}>Forward Outlook</Text>
+          <Text style={styles.outlookText}>{outlook}</Text>
+        </View>
+
+        {/* Contact Information */}
+        {(contactName || contactEmail || contactPhone) && (
+          <View style={[styles.commentaryBox, { marginTop: 20 }]}>
+            <Text style={styles.commentaryTitle}>Questions?</Text>
+            <Text style={styles.commentaryText}>
+              For any questions about this report or your portfolio, please contact:
+            </Text>
+            {contactName && (
+              <Text style={[styles.commentaryText, { marginTop: 5, fontFamily: 'Helvetica-Bold' }]}>
+                {contactName}
+              </Text>
+            )}
+            {contactEmail && (
+              <Text style={styles.commentaryText}>{contactEmail}</Text>
+            )}
+            {contactPhone && (
+              <Text style={styles.commentaryText}>{contactPhone}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Disclosures */}
+        <View style={[styles.section, { marginTop: 'auto' }]}>
+          <Text style={[styles.sectionTitle, { fontSize: 9 }]}>Important Disclosures</Text>
+          <Text style={{ fontSize: 7, color: colors.textMuted, lineHeight: 1.4 }}>
+            This report is provided for informational purposes only and does not constitute an offer to sell 
+            or a solicitation to buy any securities. Past performance is not indicative of future results. 
+            Investment involves risk including possible loss of principal. The information contained herein 
+            has been prepared from sources believed reliable but is not guaranteed by HedgeCo as to its 
+            accuracy or completeness. Please refer to the fund's offering documents for complete details 
+            regarding fees, risks, and investment terms.
+          </Text>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>HedgeCo Quarterly Review • Confidential</Text>
+          <Text style={styles.footerText}>{quarter}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default QuarterlyReviewReport;

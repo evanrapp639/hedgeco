@@ -1,0 +1,899 @@
+/**
+ * Performance Analysis PDF Template
+ * Sprint 8: HedgeCo.Net
+ * 
+ * Detailed performance analysis report with charts and metrics
+ */
+
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Svg,
+  Line,
+  Path,
+  Rect,
+  G,
+} from '@react-pdf/renderer';
+
+// Color palette
+const colors = {
+  primary: '#1a365d',
+  secondary: '#2c5282',
+  accent: '#0ea5e9',
+  success: '#16a34a',
+  danger: '#dc2626',
+  warning: '#f59e0b',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  background: '#f8fafc',
+  white: '#ffffff',
+  chartLine: '#0ea5e9',
+  chartFill: '#bae6fd',
+  benchmark: '#94a3b8',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    backgroundColor: colors.white,
+  },
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 3,
+    borderBottomColor: colors.primary,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logo: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 3,
+  },
+  reportTitle: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 2,
+  },
+  fundName: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  dateLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  dateValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  // Metrics Grid
+  metricsSection: {
+    marginBottom: 20,
+  },
+  metricsTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 10,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metricBox: {
+    width: '25%',
+    padding: 10,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  metricBoxLast: {
+    borderRightWidth: 0,
+  },
+  metricLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    marginBottom: 3,
+  },
+  metricValue: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  metricValuePositive: {
+    color: colors.success,
+  },
+  metricValueNegative: {
+    color: colors.danger,
+  },
+  metricChange: {
+    fontSize: 7,
+    marginTop: 2,
+  },
+  // Chart Section
+  chartSection: {
+    marginBottom: 20,
+  },
+  chartTitle: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 10,
+  },
+  chartContainer: {
+    height: 150,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 10,
+    backgroundColor: colors.white,
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendLine: {
+    width: 20,
+    height: 2,
+    marginRight: 5,
+  },
+  legendText: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  // Returns Table
+  tableSection: {
+    marginBottom: 20,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  tableHeaderCell: {
+    color: colors.white,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center' as const,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowAlt: {
+    backgroundColor: colors.background,
+  },
+  tableCell: {
+    fontSize: 8,
+    textAlign: 'center' as const,
+    color: colors.text,
+  },
+  tableCellFirst: {
+    textAlign: 'left' as const,
+    fontFamily: 'Helvetica-Bold',
+  },
+  // Risk Metrics Section
+  riskSection: {
+    marginBottom: 20,
+  },
+  riskGrid: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  riskColumn: {
+    flex: 1,
+  },
+  riskBox: {
+    backgroundColor: colors.background,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+  },
+  riskLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  riskValue: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.text,
+  },
+  riskDescription: {
+    fontSize: 7,
+    color: colors.textMuted,
+    marginTop: 3,
+  },
+  // Drawdown Chart
+  drawdownSection: {
+    marginBottom: 20,
+  },
+  drawdownChart: {
+    height: 80,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 8,
+  },
+  // Comparison Table
+  comparisonTable: {
+    marginTop: 10,
+  },
+  comparisonHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.secondary,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  comparisonRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // Commentary
+  commentaryBox: {
+    backgroundColor: colors.background,
+    padding: 12,
+    marginTop: 15,
+    borderRadius: 4,
+  },
+  commentaryTitle: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.primary,
+    marginBottom: 6,
+  },
+  commentaryText: {
+    fontSize: 9,
+    color: colors.text,
+    lineHeight: 1.5,
+  },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 40,
+    right: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerText: {
+    fontSize: 7,
+    color: colors.textMuted,
+  },
+  pageNumber: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+});
+
+// Type definitions
+export interface MonthlyReturn {
+  year: number;
+  month: number;
+  return: number;
+  benchmark?: number;
+}
+
+export interface PerformanceMetrics {
+  mtdReturn: number;
+  qtdReturn: number;
+  ytdReturn: number;
+  oneYearReturn?: number;
+  threeYearReturn?: number;
+  fiveYearReturn?: number;
+  sinceInception: number;
+  annualizedReturn: number;
+}
+
+export interface RiskMetrics {
+  volatility: number;
+  sharpeRatio: number;
+  sortinoRatio: number;
+  maxDrawdown: number;
+  maxDrawdownStart?: Date;
+  maxDrawdownEnd?: Date;
+  recoveryDays?: number;
+  currentDrawdown: number;
+  beta?: number;
+  alpha?: number;
+  correlationBenchmark?: number;
+  trackingError?: number;
+  informationRatio?: number;
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  gainLossRatio: number;
+}
+
+export interface DrawdownPeriod {
+  startDate: Date;
+  endDate?: Date;
+  depth: number;
+  recovered: boolean;
+  duration: number;
+}
+
+export interface PerformanceAnalysisData {
+  // Header
+  fundName: string;
+  fundId: string;
+  strategy: string;
+  benchmarkName?: string;
+  asOfDate: Date;
+  generatedAt: Date;
+  
+  // Performance
+  performance: PerformanceMetrics;
+  benchmarkPerformance?: Partial<PerformanceMetrics>;
+  
+  // Risk
+  risk: RiskMetrics;
+  
+  // Returns
+  monthlyReturns: MonthlyReturn[];
+  cumulativeReturns: { date: Date; value: number; benchmark?: number }[];
+  
+  // Drawdowns
+  topDrawdowns: DrawdownPeriod[];
+  
+  // Commentary
+  commentary?: string;
+}
+
+// Helper functions
+const formatPercent = (value: number | undefined, decimals = 2): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+};
+
+const formatRatio = (value: number | undefined, decimals = 2): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return value.toFixed(decimals);
+};
+
+const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+const formatMonthYear = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+  }).format(date);
+};
+
+// Mini line chart component using SVG
+const MiniLineChart: React.FC<{
+  data: { date: Date; value: number; benchmark?: number }[];
+  width: number;
+  height: number;
+}> = ({ data, width, height }) => {
+  if (data.length === 0) return null;
+
+  const padding = { top: 10, right: 10, bottom: 20, left: 40 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const values = data.map(d => d.value);
+  const benchmarkValues = data.filter(d => d.benchmark !== undefined).map(d => d.benchmark!);
+  const allValues = [...values, ...benchmarkValues];
+  
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+  const range = maxValue - minValue || 1;
+
+  const xScale = (index: number) => padding.left + (index / (data.length - 1)) * chartWidth;
+  const yScale = (value: number) => padding.top + (1 - (value - minValue) / range) * chartHeight;
+
+  // Generate path for fund
+  const fundPath = data.map((d, i) => 
+    `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(d.value)}`
+  ).join(' ');
+
+  // Generate path for benchmark
+  const benchmarkPath = data
+    .filter(d => d.benchmark !== undefined)
+    .map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(d.benchmark!)}`)
+    .join(' ');
+
+  return (
+    <Svg width={width} height={height}>
+      {/* Grid lines */}
+      <G>
+        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
+          <Line
+            key={i}
+            x1={padding.left}
+            y1={padding.top + pct * chartHeight}
+            x2={width - padding.right}
+            y2={padding.top + pct * chartHeight}
+            stroke={colors.border}
+            strokeWidth={0.5}
+          />
+        ))}
+      </G>
+      
+      {/* Y-axis labels */}
+      <G>
+        {[0, 0.5, 1].map((pct, i) => {
+          const value = maxValue - pct * range;
+          return (
+            <React.Fragment key={i}>
+              <Rect
+                x={0}
+                y={padding.top + pct * chartHeight - 5}
+                width={35}
+                height={10}
+              />
+            </React.Fragment>
+          );
+        })}
+      </G>
+
+      {/* Benchmark line */}
+      {benchmarkPath && (
+        <Path
+          d={benchmarkPath}
+          stroke={colors.benchmark}
+          strokeWidth={1}
+          strokeDasharray="3,3"
+          fill="none"
+        />
+      )}
+
+      {/* Fund line */}
+      <Path
+        d={fundPath}
+        stroke={colors.chartLine}
+        strokeWidth={2}
+        fill="none"
+      />
+
+      {/* Zero line if applicable */}
+      {minValue < 0 && maxValue > 0 && (
+        <Line
+          x1={padding.left}
+          y1={yScale(0)}
+          x2={width - padding.right}
+          y2={yScale(0)}
+          stroke={colors.text}
+          strokeWidth={0.5}
+        />
+      )}
+    </Svg>
+  );
+};
+
+// Metric Box Component
+const MetricBox: React.FC<{
+  label: string;
+  value: string;
+  benchmark?: string;
+  isReturn?: boolean;
+  rawValue?: number;
+  isLast?: boolean;
+}> = ({ label, value, benchmark, isReturn, rawValue, isLast }) => (
+  <View style={[styles.metricBox, isLast && styles.metricBoxLast]}>
+    <Text style={styles.metricLabel}>{label}</Text>
+    <Text style={[
+      styles.metricValue,
+      isReturn && rawValue !== undefined && (rawValue >= 0 ? styles.metricValuePositive : styles.metricValueNegative)
+    ]}>
+      {value}
+    </Text>
+    {benchmark && (
+      <Text style={[styles.metricChange, { color: colors.textMuted }]}>
+        vs Benchmark: {benchmark}
+      </Text>
+    )}
+  </View>
+);
+
+// Main Component
+export const PerformanceAnalysisReport: React.FC<{ data: PerformanceAnalysisData }> = ({ data }) => {
+  const {
+    fundName,
+    strategy,
+    benchmarkName,
+    asOfDate,
+    generatedAt,
+    performance,
+    benchmarkPerformance,
+    risk,
+    monthlyReturns,
+    cumulativeReturns,
+    topDrawdowns,
+    commentary,
+  } = data;
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Organize returns by year
+  const returnsByYear = monthlyReturns.reduce((acc, ret) => {
+    if (!acc[ret.year]) acc[ret.year] = {};
+    acc[ret.year][ret.month] = ret;
+    return acc;
+  }, {} as Record<number, Record<number, MonthlyReturn>>);
+
+  const years = Object.keys(returnsByYear).map(Number).sort((a, b) => b - a).slice(0, 5);
+
+  return (
+    <Document>
+      {/* Page 1: Performance Overview */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.reportTitle}>Performance Analysis</Text>
+            <Text style={styles.fundName}>{fundName} • {strategy}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.dateLabel}>AS OF</Text>
+            <Text style={styles.dateValue}>{formatDate(asOfDate)}</Text>
+          </View>
+        </View>
+
+        {/* Performance Metrics */}
+        <View style={styles.metricsSection}>
+          <Text style={styles.metricsTitle}>Performance Summary</Text>
+          <View style={styles.metricsGrid}>
+            <MetricBox 
+              label="MTD Return" 
+              value={formatPercent(performance.mtdReturn)} 
+              isReturn 
+              rawValue={performance.mtdReturn}
+            />
+            <MetricBox 
+              label="QTD Return" 
+              value={formatPercent(performance.qtdReturn)} 
+              isReturn 
+              rawValue={performance.qtdReturn}
+            />
+            <MetricBox 
+              label="YTD Return" 
+              value={formatPercent(performance.ytdReturn)}
+              benchmark={benchmarkPerformance?.ytdReturn !== undefined ? formatPercent(benchmarkPerformance.ytdReturn) : undefined}
+              isReturn 
+              rawValue={performance.ytdReturn}
+            />
+            <MetricBox 
+              label="1 Year" 
+              value={formatPercent(performance.oneYearReturn)}
+              benchmark={benchmarkPerformance?.oneYearReturn !== undefined ? formatPercent(benchmarkPerformance.oneYearReturn) : undefined}
+              isReturn 
+              rawValue={performance.oneYearReturn}
+              isLast
+            />
+            <MetricBox 
+              label="3 Year (Ann.)" 
+              value={formatPercent(performance.threeYearReturn)}
+              isReturn 
+              rawValue={performance.threeYearReturn}
+            />
+            <MetricBox 
+              label="5 Year (Ann.)" 
+              value={formatPercent(performance.fiveYearReturn)}
+              isReturn 
+              rawValue={performance.fiveYearReturn}
+            />
+            <MetricBox 
+              label="Since Inception" 
+              value={formatPercent(performance.sinceInception)}
+              isReturn 
+              rawValue={performance.sinceInception}
+            />
+            <MetricBox 
+              label="Annualized" 
+              value={formatPercent(performance.annualizedReturn)}
+              isReturn 
+              rawValue={performance.annualizedReturn}
+              isLast
+            />
+          </View>
+        </View>
+
+        {/* Cumulative Performance Chart */}
+        <View style={styles.chartSection}>
+          <Text style={styles.chartTitle}>Cumulative Performance</Text>
+          <View style={styles.chartContainer}>
+            <MiniLineChart 
+              data={cumulativeReturns} 
+              width={515} 
+              height={130} 
+            />
+          </View>
+          <View style={styles.chartLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, { backgroundColor: colors.chartLine }]} />
+              <Text style={styles.legendText}>{fundName}</Text>
+            </View>
+            {benchmarkName && (
+              <View style={styles.legendItem}>
+                <View style={[styles.legendLine, { backgroundColor: colors.benchmark }]} />
+                <Text style={styles.legendText}>{benchmarkName}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Monthly Returns Table */}
+        <View style={styles.tableSection}>
+          <Text style={styles.chartTitle}>Monthly Returns (%)</Text>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, { width: '8%', textAlign: 'left' as const }]}>Year</Text>
+              {months.map(m => (
+                <Text key={m} style={[styles.tableHeaderCell, { width: '7%' }]}>{m}</Text>
+              ))}
+              <Text style={[styles.tableHeaderCell, { width: '8%' }]}>Year</Text>
+            </View>
+            {years.map((year, idx) => {
+              const yearReturns = returnsByYear[year] || {};
+              const yearTotal = Object.values(yearReturns).reduce(
+                (acc, r) => acc * (1 + r.return / 100), 1
+              ) - 1;
+              
+              return (
+                <View key={year} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                  <Text style={[styles.tableCell, { width: '8%' }, styles.tableCellFirst]}>{year}</Text>
+                  {months.map((_, monthIdx) => {
+                    const ret = yearReturns[monthIdx + 1]?.return;
+                    return (
+                      <Text 
+                        key={monthIdx} 
+                        style={[
+                          styles.tableCell, 
+                          { width: '7%' },
+                          ret !== undefined && { color: ret >= 0 ? colors.success : colors.danger }
+                        ]}
+                      >
+                        {ret !== undefined ? ret.toFixed(1) : '-'}
+                      </Text>
+                    );
+                  })}
+                  <Text style={[
+                    styles.tableCell, 
+                    { width: '8%', fontFamily: 'Helvetica-Bold' },
+                    { color: yearTotal >= 0 ? colors.success : colors.danger }
+                  ]}>
+                    {(yearTotal * 100).toFixed(1)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>
+            HedgeCo Performance Analysis • Confidential
+          </Text>
+          <Text style={styles.footerText}>Generated {formatDate(generatedAt)}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+
+      {/* Page 2: Risk Analysis */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.logo}>HedgeCo</Text>
+            <Text style={styles.reportTitle}>Risk Analysis</Text>
+            <Text style={styles.fundName}>{fundName}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.dateLabel}>AS OF</Text>
+            <Text style={styles.dateValue}>{formatDate(asOfDate)}</Text>
+          </View>
+        </View>
+
+        {/* Risk Metrics */}
+        <View style={styles.riskSection}>
+          <Text style={styles.metricsTitle}>Risk Metrics</Text>
+          <View style={styles.riskGrid}>
+            <View style={styles.riskColumn}>
+              <View style={styles.riskBox}>
+                <Text style={styles.riskLabel}>Annualized Volatility</Text>
+                <Text style={styles.riskValue}>{formatPercent(risk.volatility)}</Text>
+                <Text style={styles.riskDescription}>Standard deviation of returns</Text>
+              </View>
+              <View style={styles.riskBox}>
+                <Text style={styles.riskLabel}>Sharpe Ratio</Text>
+                <Text style={styles.riskValue}>{formatRatio(risk.sharpeRatio)}</Text>
+                <Text style={styles.riskDescription}>Risk-adjusted return</Text>
+              </View>
+              <View style={styles.riskBox}>
+                <Text style={styles.riskLabel}>Sortino Ratio</Text>
+                <Text style={styles.riskValue}>{formatRatio(risk.sortinoRatio)}</Text>
+                <Text style={styles.riskDescription}>Downside risk-adjusted return</Text>
+              </View>
+              <View style={styles.riskBox}>
+                <Text style={styles.riskLabel}>Win Rate</Text>
+                <Text style={styles.riskValue}>{formatPercent(risk.winRate)}</Text>
+                <Text style={styles.riskDescription}>% of positive months</Text>
+              </View>
+            </View>
+            <View style={styles.riskColumn}>
+              <View style={[styles.riskBox, { borderLeftColor: colors.danger }]}>
+                <Text style={styles.riskLabel}>Maximum Drawdown</Text>
+                <Text style={[styles.riskValue, { color: colors.danger }]}>{formatPercent(risk.maxDrawdown)}</Text>
+                <Text style={styles.riskDescription}>
+                  {risk.maxDrawdownStart && risk.maxDrawdownEnd 
+                    ? `${formatMonthYear(risk.maxDrawdownStart)} to ${formatMonthYear(risk.maxDrawdownEnd)}`
+                    : 'Largest peak-to-trough decline'
+                  }
+                </Text>
+              </View>
+              <View style={[styles.riskBox, { borderLeftColor: colors.warning }]}>
+                <Text style={styles.riskLabel}>Current Drawdown</Text>
+                <Text style={[styles.riskValue, { color: risk.currentDrawdown < 0 ? colors.warning : colors.success }]}>
+                  {formatPercent(risk.currentDrawdown)}
+                </Text>
+                <Text style={styles.riskDescription}>Distance from peak</Text>
+              </View>
+              <View style={styles.riskBox}>
+                <Text style={styles.riskLabel}>Average Win / Loss</Text>
+                <Text style={styles.riskValue}>
+                  {formatPercent(risk.avgWin)} / {formatPercent(risk.avgLoss)}
+                </Text>
+                <Text style={styles.riskDescription}>Gain/Loss Ratio: {formatRatio(risk.gainLossRatio)}</Text>
+              </View>
+              {risk.beta !== undefined && (
+                <View style={styles.riskBox}>
+                  <Text style={styles.riskLabel}>Beta / Alpha</Text>
+                  <Text style={styles.riskValue}>
+                    {formatRatio(risk.beta)} / {formatPercent(risk.alpha)}
+                  </Text>
+                  <Text style={styles.riskDescription}>vs {benchmarkName || 'Benchmark'}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Drawdown Analysis */}
+        <View style={styles.drawdownSection}>
+          <Text style={styles.metricsTitle}>Top Drawdown Periods</Text>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, { width: '5%' }]}>#</Text>
+              <Text style={[styles.tableHeaderCell, { width: '20%', textAlign: 'left' as const }]}>Start Date</Text>
+              <Text style={[styles.tableHeaderCell, { width: '20%', textAlign: 'left' as const }]}>End Date</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Depth</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Duration</Text>
+              <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Status</Text>
+            </View>
+            {topDrawdowns.slice(0, 5).map((dd, idx) => (
+              <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                <Text style={[styles.tableCell, { width: '5%' }]}>{idx + 1}</Text>
+                <Text style={[styles.tableCell, { width: '20%', textAlign: 'left' as const }]}>
+                  {formatMonthYear(dd.startDate)}
+                </Text>
+                <Text style={[styles.tableCell, { width: '20%', textAlign: 'left' as const }]}>
+                  {dd.endDate ? formatMonthYear(dd.endDate) : 'Ongoing'}
+                </Text>
+                <Text style={[styles.tableCell, { width: '15%', color: colors.danger }]}>
+                  {formatPercent(dd.depth)}
+                </Text>
+                <Text style={[styles.tableCell, { width: '15%' }]}>
+                  {dd.duration} months
+                </Text>
+                <Text style={[
+                  styles.tableCell, 
+                  { width: '15%' },
+                  { color: dd.recovered ? colors.success : colors.warning }
+                ]}>
+                  {dd.recovered ? 'Recovered' : 'Active'}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Benchmark Comparison */}
+        {benchmarkPerformance && (
+          <View style={styles.tableSection}>
+            <Text style={styles.metricsTitle}>Benchmark Comparison ({benchmarkName})</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableHeaderCell, { width: '25%', textAlign: 'left' as const }]}>Metric</Text>
+                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>{fundName}</Text>
+                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>{benchmarkName}</Text>
+                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>Difference</Text>
+              </View>
+              {[
+                { label: 'YTD Return', fund: performance.ytdReturn, bench: benchmarkPerformance.ytdReturn },
+                { label: '1 Year Return', fund: performance.oneYearReturn, bench: benchmarkPerformance.oneYearReturn },
+                { label: '3 Year Return', fund: performance.threeYearReturn, bench: benchmarkPerformance.threeYearReturn },
+              ].filter(row => row.fund !== undefined && row.bench !== undefined).map((row, idx) => {
+                const diff = row.fund! - row.bench!;
+                return (
+                  <View key={idx} style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}>
+                    <Text style={[styles.tableCell, { width: '25%', textAlign: 'left' as const }]}>{row.label}</Text>
+                    <Text style={[styles.tableCell, { width: '25%' }, { color: row.fund! >= 0 ? colors.success : colors.danger }]}>
+                      {formatPercent(row.fund)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '25%' }, { color: row.bench! >= 0 ? colors.success : colors.danger }]}>
+                      {formatPercent(row.bench)}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '25%' }, { color: diff >= 0 ? colors.success : colors.danger }]}>
+                      {formatPercent(diff)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Commentary */}
+        {commentary && (
+          <View style={styles.commentaryBox}>
+            <Text style={styles.commentaryTitle}>Manager Commentary</Text>
+            <Text style={styles.commentaryText}>{commentary}</Text>
+          </View>
+        )}
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>
+            HedgeCo Performance Analysis • Confidential
+          </Text>
+          <Text style={styles.footerText}>Generated {formatDate(generatedAt)}</Text>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default PerformanceAnalysisReport;

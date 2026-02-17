@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Providers } from "@/components/Providers";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 import { OfflineBanner } from "@/components/ui/offline-banner";
+import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 
 // Optimized font loading with display swap for better LCP
 const geistSans = localFont({
@@ -145,7 +146,9 @@ export default function RootLayout({
           </a>
           <Header />
           <main id="main-content" className="flex-1 pb-16 md:pb-0" role="main">
-            {children}
+            <ErrorBoundaryWrapper>
+              {children}
+            </ErrorBoundaryWrapper>
           </main>
           <Footer />
         </Providers>

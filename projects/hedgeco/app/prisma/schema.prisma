@@ -68,6 +68,10 @@ model User {
   notifications   Notification[]
   notificationPreferences NotificationPreference?
 
+  // Reports & Campaigns (Sprint 8)
+  scheduledReports ScheduledReport[]
+  emailCampaigns   EmailCampaign[]
+
   // Timestamps
   lastLoginAt     DateTime?
   lastLoginIp     String?
@@ -1128,6 +1132,134 @@ enum SearchType {
   SEMANTIC    // Pure vector search
   STRUCTURED  // SQL filters only
   HYBRID      // Combined vector + filters
+}
+
+// ============================================================
+// SCHEDULED REPORTS (Sprint 8)
+// ============================================================
+
+model ScheduledReport {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  type        ReportType
+  schedule    String       // cron expression
+  recipients  String[]     // email addresses
+  filters     Json?        // fund filters, date range, etc.
+  format      ReportFormat @default(PDF)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  enabled     Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  executions  ReportExecution[]
+
+  @@index([userId, enabled])
+  @@index([nextRunAt, enabled])
+}
+
+enum ReportType {
+  PORTFOLIO_SUMMARY
+  PERFORMANCE_ANALYSIS
+  RISK_METRICS
+  FUND_COMPARISON
+  QUARTERLY_REVIEW
+  CUSTOM
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+}
+
+model ReportExecution {
+  id          String          @id @default(cuid())
+  reportId    String
+  status      ExecutionStatus @default(PENDING)
+  fileUrl     String?
+  fileSize    Int?
+  error       String?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+
+  report      ScheduledReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, startedAt])
+  @@index([status])
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ============================================================
+// EMAIL CAMPAIGNS (Sprint 8)
+// ============================================================
+
+model EmailCampaign {
+  id             String         @id @default(cuid())
+  userId         String
+  name           String
+  subject        String
+  content        String         @db.Text
+  templateId     String?
+  status         CampaignStatus @default(DRAFT)
+  audienceFilter Json?
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  stats          Json?          // opens, clicks, etc.
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([scheduledFor, status])
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+// ============================================================
+// BULK EXPORTS (Sprint 8)
+// ============================================================
+
+model ExportJob {
+  id          String       @id @default(cuid())
+  userId      String
+  type        ExportType
+  filters     Json?
+  format      ReportFormat @default(CSV)
+  status      ExecutionStatus @default(PENDING)
+  fileUrl     String?
+  fileSize    Int?
+  rowCount    Int?
+  error       String?
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime?
+
+  @@index([userId, startedAt])
+  @@index([status])
+}
+
+enum ExportType {
+  FUNDS
+  USERS
+  ANALYTICS
+  CONTACTS
+  DEALS
 }
 
 // ============================================================

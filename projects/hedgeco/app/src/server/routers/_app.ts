@@ -23,6 +23,9 @@ import { adminAnalyticsRouter } from './adminAnalytics';
 import { crmRouter } from './crm';
 import { activityRouter } from './activity';
 import { comparisonRouter } from './comparison';
+import { reportRouter } from './report';
+import { campaignRouter } from './campaign';
+import { exportRouter } from './export';
 
 export const appRouter = router({
   fund: fundRouter,
@@ -47,6 +50,9 @@ export const appRouter = router({
   crm: crmRouter,
   activity: activityRouter,
   comparison: comparisonRouter,
+  report: reportRouter,
+  campaign: campaignRouter,
+  export: exportRouter,
 });
 
 // Export type definition for client

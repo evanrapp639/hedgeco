@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker deployments
+  output: 'standalone',
+
   // Security headers configuration
   // Note: Additional headers are set via middleware.ts
   // These are backup headers for static assets and cases where middleware doesn't run
