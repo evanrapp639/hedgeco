@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd projects/hedgeco/app && npm install && npm run build",
-  "outputDirectory": "projects/hedgeco/app/.next",
-  "installCommand": "cd projects/hedgeco/app && npm install",
-  "framework": "nextjs"
-}
