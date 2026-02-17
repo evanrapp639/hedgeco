@@ -19,7 +19,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  User,
   Mail,
   Calendar,
   MoreHorizontal,
@@ -35,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OptimizedAvatar } from "@/components/ui/optimized-avatar";
 
 const ROLES = [
   { value: "all", label: "All Roles" },
@@ -212,17 +212,13 @@ export default function UsersPage() {
                       <tr key={user.id} className="hover:bg-slate-50">
                         <td className="py-4">
                           <Link href={`/admin/users/${user.id}`} className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                              {user.profile?.avatarUrl ? (
-                                <img
-                                  src={user.profile.avatarUrl}
-                                  alt=""
-                                  className="h-10 w-10 rounded-full"
-                                />
-                              ) : (
-                                <User className="h-5 w-5 text-slate-400" />
-                              )}
-                            </div>
+                            <OptimizedAvatar
+                              src={user.profile?.avatarUrl}
+                              firstName={user.profile?.firstName}
+                              lastName={user.profile?.lastName}
+                              email={user.email}
+                              size="md"
+                            />
                             <div>
                               <div className="font-medium text-slate-900">
                                 {user.profile?.firstName && user.profile?.lastName
@@ -230,7 +226,7 @@ export default function UsersPage() {
                                   : user.email.split("@")[0]}
                               </div>
                               <div className="text-sm text-slate-500 flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
+                                <Mail className="h-3 w-3" aria-hidden="true" />
                                 {user.email}
                               </div>
                             </div>
@@ -259,8 +255,8 @@ export default function UsersPage() {
                         <td className="py-4">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" aria-label={`Actions for ${user.profile?.firstName || user.email}`}>
+                                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

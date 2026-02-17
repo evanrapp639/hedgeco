@@ -7,12 +7,20 @@ import type { Fund, FundStatistics } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/library';
 
 // ============================================================
-// OpenAI Client
+// OpenAI Client (lazy initialized)
 // ============================================================
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 const EMBEDDING_MODEL = 'text-embedding-3-large';
 const EMBEDDING_DIMENSIONS = 3072;
@@ -82,7 +90,7 @@ function formatFundType(type: string): string {
  * Generate embedding vector for text using OpenAI
  */
 export async function generateEmbedding(text: string): Promise<EmbeddingResult> {
-  const response = await openai.embeddings.create({
+  const response = await getOpenAI().embeddings.create({
     model: EMBEDDING_MODEL,
     input: text,
     dimensions: EMBEDDING_DIMENSIONS,
@@ -110,7 +118,7 @@ export async function generateEmbeddingsBatch(texts: string[]): Promise<Embeddin
   for (let i = 0; i < texts.length; i += batchSize) {
     const batch = texts.slice(i, i + batchSize);
     
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
       model: EMBEDDING_MODEL,
       input: batch,
       dimensions: EMBEDDING_DIMENSIONS,

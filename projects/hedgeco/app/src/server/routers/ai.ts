@@ -13,12 +13,20 @@ import {
 } from '@/lib/embeddings';
 
 // ============================================================
-// OpenAI Client
+// OpenAI Client (lazy initialized)
 // ============================================================
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 const CHAT_MODEL = 'gpt-4o';
 const SUMMARY_MODEL = 'gpt-4o-mini';
@@ -591,7 +599,7 @@ When discussing specific funds, reference the data provided. If the user asks ab
       ];
 
       // Call OpenAI
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: CHAT_MODEL,
         messages: openaiMessages,
         temperature: 0.7,
@@ -692,7 +700,7 @@ ${fundContext}
 
 ${performanceNarrative}`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: SUMMARY_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -779,7 +787,7 @@ ${managerInfo}
 
 Question: ${question}`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: CHAT_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },

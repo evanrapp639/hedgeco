@@ -45,6 +45,9 @@ model User {
   activities      UserActivity[]
   savedSearches   SavedSearch[]
 
+  // Subscription
+  subscription    Subscription?
+
   // Messaging
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageRecipient")
@@ -318,6 +321,9 @@ model Fund {
 
   // Vector embedding (for semantic search)
   embedding       FundEmbedding?
+
+  // Analytics (Sprint 5)
+  views           FundView[]
 
   // Timestamps
   approvedAt      DateTime?
@@ -826,6 +832,43 @@ model EmailPreference {
 }
 
 // ============================================================
+// SUBSCRIPTIONS (Stripe Integration)
+// ============================================================
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([plan, status])
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+// ============================================================
 // AUDIT & SECURITY
 // ============================================================
 
@@ -949,4 +992,37 @@ enum SearchType {
   SEMANTIC    // Pure vector search
   STRUCTURED  // SQL filters only
   HYBRID      // Combined vector + filters
+}
+
+// ============================================================
+// ANALYTICS & TRACKING (Sprint 5)
+// ============================================================
+
+model FundView {
+  id        String   @id @default(cuid())
+  fundId    String
+  userId    String?
+  sessionId String?
+  referrer  String?
+  createdAt DateTime @default(now())
+
+  fund      Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  @@index([fundId, createdAt])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SearchEvent {
+  id            String   @id @default(cuid())
+  query         String
+  filters       Json?
+  resultCount   Int
+  userId        String?
+  clickedFundId String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([query])
+  @@index([userId])
 }

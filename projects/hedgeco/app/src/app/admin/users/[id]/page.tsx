@@ -17,7 +17,6 @@ import {
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft,
-  User,
   Mail,
   Calendar,
   Building2,
@@ -32,7 +31,9 @@ import {
   TrendingUp,
   Activity,
   Clock,
+  User,
 } from "lucide-react";
+import { OptimizedAvatar } from "@/components/ui/optimized-avatar";
 
 const ROLES = [
   { value: "INVESTOR", label: "Investor" },
@@ -148,17 +149,14 @@ export default function UserDetailPage({
       {/* User Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
-            {user.profile?.avatarUrl ? (
-              <img
-                src={user.profile.avatarUrl}
-                alt=""
-                className="h-16 w-16 rounded-full"
-              />
-            ) : (
-              <User className="h-8 w-8 text-slate-400" />
-            )}
-          </div>
+          <OptimizedAvatar
+            src={user.profile?.avatarUrl}
+            firstName={user.profile?.firstName}
+            lastName={user.profile?.lastName}
+            email={user.email}
+            size="lg"
+            alt={`Avatar for ${user.profile?.firstName || user.email}`}
+          />
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
               {user.profile?.firstName && user.profile?.lastName
@@ -170,7 +168,7 @@ export default function UserDetailPage({
                 {user.role.toLowerCase().replace(/_/g, " ")}
               </Badge>
               <Badge variant="outline" className={`${statusInfo.bg} ${statusInfo.color}`}>
-                <StatusIcon className="h-3 w-3 mr-1" />
+                <StatusIcon className="h-3 w-3 mr-1" aria-hidden="true" />
                 {statusInfo.label}
               </Badge>
             </div>

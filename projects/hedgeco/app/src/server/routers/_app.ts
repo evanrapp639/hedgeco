@@ -13,6 +13,8 @@ import { aiRouter } from './ai';
 import { adminRouter } from './admin';
 import { pdfRouter } from './pdf';
 import { emailRouter } from './email';
+import { paymentRouter } from './payment';
+import { analyticsRouter } from './analytics';
 
 export const appRouter = router({
   fund: fundRouter,
@@ -27,6 +29,8 @@ export const appRouter = router({
   admin: adminRouter,
   pdf: pdfRouter,
   email: emailRouter,
+  payment: paymentRouter,
+  analytics: analyticsRouter,
 });
 
 // Export type definition for client
