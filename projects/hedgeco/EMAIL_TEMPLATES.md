@@ -100,19 +100,26 @@ You're receiving this email because you signed up for HedgeCo.Net.
 
 ## 2. Fund Manager Registration Autoresponder
 
-**Status:** TODO - Need to capture
+**Status:** ✅ SAME AS INVESTOR — unified template for all user types
 
 ---
 
 ## 3. Service Provider Registration Autoresponder
 
-**Status:** TODO - Need to capture
+**Status:** ✅ SAME AS INVESTOR — unified template for all user types
 
 ---
 
 ## 4. News Member Registration Autoresponder
 
-**Status:** TODO - Need to capture
+**Status:** ✅ SAME AS INVESTOR — unified template for all user types
+
+---
+
+## ⚠️ Bug Found in Staging
+
+The autoresponder shows "Hi ," without the first name populated. 
+Make sure our template properly uses `{{firstName}}` variable.
 
 ---
 
