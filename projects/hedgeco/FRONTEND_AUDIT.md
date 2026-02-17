@@ -1,7 +1,8 @@
-# HedgeCo.Net Frontend Audit
+# HedgeCo.Net Frontend Audit (Staging)
 
 **Date:** 2026-02-17  
 **Audited By:** Daphne 🧡 (Frontend Specialist)  
+**Source:** https://staging.hedgeco.net  
 **Purpose:** Document existing site for exact recreation
 
 ---
@@ -9,6 +10,53 @@
 ## 📌 Executive Summary
 
 HedgeCo.Net is an alternative investments database platform serving hedge fund managers, investors, and service providers. The site uses **Tailwind CSS** with **jQuery** for JavaScript interactions. It's a modern, responsive design with a teal/dark slate color scheme.
+
+**⚠️ CRITICAL: Two-Tier Access Control System**
+- Fund data is RESTRICTED - only registered AND approved users see fund/SPV details
+- Non-registered users can see teaser data (limited fields hidden)
+- Registration requires dual approval: Email verification + Accredited Investor status
+
+---
+
+## 🔐 Access Control System
+
+### User Access Levels
+
+| Level | Fund Database | SPV List | SPV Details | Valuation Data | Documents |
+|-------|---------------|----------|-------------|----------------|-----------|
+| **Anonymous** | ❌ Redirect to login | ✅ Teaser data | ✅ Partial | ❌ "Hidden" | ❌ "Login Required" |
+| **Registered (Pending)** | ❌ | ✅ | ✅ Partial | ❌ | ❌ |
+| **Approved** | ✅ Full access | ✅ Full | ✅ Full | ✅ | ✅ |
+
+### SPV Teaser Data (Visible to All)
+- SPV/Company name ✅
+- Status badges (Open, Approved, Closing Soon) ✅
+- Description/Investment thesis ✅
+- Type badge (SPV) ✅
+- Raised amount & percentage ✅
+- Minimum Investment amount ✅
+- Target Raise ✅
+- Pre-Money Valuation ✅ (in detail view)
+- Management Fee ✅
+- Carried Interest ✅
+- Deal Lead name/role ✅
+
+### SPV Restricted Data (Login Required)
+- **Valuation** - Shows "Hidden" with "Login to View" link
+- **Documents** - Shows "Login Required" modal with login CTA
+- Full contact/messaging capabilities
+
+### Fund Database Access
+- **Completely protected** - redirects to login page
+- No teaser data shown for funds
+- URL: `/funds/search.php` → redirects to `/sign-in.php`
+
+### Approval Requirements
+1. **Email verification** - Standard account activation
+2. **Accredited Investor status** - Admin verifies eligibility
+3. **Both approvals required** before seeing any fund or SPV details
+
+Terms include: *"By using restricted areas, you represent that you are an 'accredited investor,' 'qualified purchaser,' or 'qualified client,' as applicable."*
 
 ---
 
@@ -26,48 +74,29 @@ HedgeCo.Net is an alternative investments database platform serving hedge fund m
 | Name | Hex Code | Usage |
 |------|----------|-------|
 | **White** | `#ffffff` | Card backgrounds, text on dark |
-| **Light Gray** | `#f8fafc` (slate-50) | Page backgrounds, alternating sections |
-| **Gray** | `#94a3b8` (slate-400) | Secondary text, muted elements |
-| **Dark Text** | `#1e293b` (slate-800) | Primary text color |
+| **Light Gray** | `#f8fafc` (slate-50) | Page backgrounds |
+| **Gray** | `#94a3b8` (slate-400) | Secondary text |
+| **Dark Text** | `#1e293b` (slate-800) | Primary text |
 
-### Accent Colors
-| Name | Hex Code | Usage |
-|------|----------|-------|
-| **Success Green** | `#10b981` (emerald-500) | Success states, checkmarks |
-| **Link Blue** | `#0ea5e9` (sky-500) | Text links (some instances) |
-| **Category Teal** | `#14b8a6` (teal-500) | Footer section headings |
-
----
-
-## 🖼️ Logo & Branding
-
-### Logo Locations
-1. **Header** - Top left corner of navigation (links to homepage)
-   - URL: `/` (homepage link)
-   - Alt text: "HedgeCo.Net"
-   - Appears to be a hedgehog icon with "HEDGECO.NET" text
-   
-2. **Footer** - Not present (text only copyright)
-
-### Logo Image
-- **Format:** PNG (likely)
-- **Path:** `/assets/images/logo/` (assumed standard path)
-- **Variants:** Single version used throughout
-
-### Brand Elements
-- Company Name: **HedgeCo.Net** (or just HedgeCo)
-- Legal Entity: **HedgeCo Ventures LLC**
-- Tagline: "The Leading Free Alternative Investment Database"
+### Status Badge Colors
+| Status | Color |
+|--------|-------|
+| Open | Teal/Green |
+| Approved | Green |
+| Closing Soon | Orange/Yellow |
+| Closed | Gray |
+| Coming Soon | Blue |
 
 ---
 
 ## 🧭 Navigation Structure
 
-### Header Navigation (Main Nav)
+### Header Navigation (Staging)
 | Label | URL | Notes |
 |-------|-----|-------|
 | Home | `/` | Logo also links here |
-| Database | `/funds/search.php` | **Requires login** |
+| Database | `/funds/search.php` | **Requires login** - redirects |
+| **SPVs** | `/spv/search.php` | **NEW** - Shows teaser data |
 | Conferences | `/conferences/conferences.php` | Public |
 | News | `/news` | Public |
 | Find Experts | `/service-providers/` | Public |
@@ -80,6 +109,7 @@ HedgeCo.Net is an alternative investments database platform serving hedge fund m
 | Login | `/sign-in.php` | Teal outlined button |
 
 ### Footer Navigation
+(Same as production - see below)
 
 **Platform**
 - Fund Database → `/funds/search.php`
@@ -101,101 +131,111 @@ HedgeCo.Net is an alternative investments database platform serving hedge fund m
 - Terms and Conditions → `/termsofuse.php`
 - HedgeCo Privacy → `/privacypolicy.php`
 
-### Footer Copyright
+---
+
+## 📄 SPV Section Structure
+
+### SPV Search Page (`/spv/search.php`)
+
+**Hero Section:**
+- Badge: "ss New Offerings Available" (green dot indicator)
+- H1: "Access Exclusive Private Market Deals"
+- Subtitle: "Invest in top-tier pre-IPO companies..."
+- CTAs: "View Opportunities" | "List Your SPV" (login required)
+
+**Filters:**
+- Asset Type dropdown: All Assets, SPVs, Funds
+- Status dropdown: All Status, Open, Closing Soon, Closed, Coming Soon
+
+**SPV Card Structure:**
 ```
-© 2025 HedgeCo.Net. All rights reserved. | Alternative Investments Platform
+┌─────────────────────────────────────┐
+│ [Logo/Icon]  SPV Name    [Status]   │
+│                                     │
+│ Description text...                 │
+│                                     │
+│ [SPV badge]                         │
+├─────────────────────────────────────┤
+│ Raised: 0% of $X.XM                 │
+├─────────────────────────────────────┤
+│ MIN INVESTMENT     VALUATION        │
+│ $XX,XXX            [Hidden]         │
+├─────────────────────────────────────┤
+│ [HedgeCo Exclusive]   [Invest Now]  │
+└─────────────────────────────────────┘
 ```
+
+### SPV Detail Page (`/spv/overview/{id}`)
+
+**Breadcrumb:**
+Home › Hedge SPV Database › {SPV Name}
+
+**Hero Section:**
+- Logo/Icon with initial letter
+- Tags: SPV, marketplace, etc.
+- H1: SPV Name
+- Description
+- Stats card:
+  - Min Investment: $XX.XX
+  - Valuation: "Hidden" + "Login to View" link
+  - "Invest Now" button
+  - Helper text: "Contact the deal lead to express interest."
+
+**Investment Highlights:**
+- H3: "Investment Highlights"
+- Full description/thesis text
+
+**Deal Structure & Terms:**
+- Grid of metrics with icons:
+  - Target Raise
+  - Pre-Money Valuation
+  - Min Investment
+  - Management Fee (%)
+  - Carried Interest (%)
+
+**Documents Section:**
+- H3: "Documents"
+- Lock icon
+- H4: "Login Required"
+- Text: "Please log in to view and download documents for this SPV."
+- "Log In" button → `/account/`
+
+**Deal Lead Section:**
+- H3: "Deal Lead"
+- Avatar with initials
+- Name: "Deal Manager"
+- Role: "External Lister"
+- "Send Message" button
 
 ---
 
-## 📄 Page Structure & Sections
+## 📝 Registration Flow
 
-### 1. Homepage (`/`)
-- **Hero Section**
-  - H1: "The Leading Free Alternative Investment Database"
-  - Subheading: "Access thousands of dollars worth of data..."
-  - Description paragraph about connecting with professionals
-  - CTA button: "Get Free Access Now" → `/signInRegistration.php`
-  - Background: Dark slate with gradient/pattern
+### Step 1: Choose Registration Type
+Path: `/signInRegistration.php`
 
-- **Alternative Investment Asset Classes** (6 cards grid)
-  - Hedge Funds 🏦
-  - Private Equity 🏢
-  - Venture Capital 🚀
-  - Real Estate 🏘️
-  - Crypto & Digital Assets ₿
-  - SPV's 🌐
-  - Each card: emoji icon, H3 title, description paragraph
+4 registration type cards:
+1. **Fund Manager** 💼
+2. **Investor** 📊
+3. **Service Provider** 🏢
+4. **News Member** 📰
 
-- **Recent News & Insights**
-  - H2: "Recent News & Insights"
-  - "View All News" link → `/news`
-  - 6 article cards with images, category tag, headline, excerpt
-  - Each article shows: image, "Hedge News" category, title, excerpt
-
-- **Why Choose HedgeCo.Net?**
-  - H2 heading
-  - Subtitle about $50,000+ value
-  - 6 feature cards (2x3 grid):
-    - Comprehensive Search 🔍
-    - Performance Analytics 📊
-    - Global Coverage 🌐
-    - Mobile Access 📱
-    - Real-time Alerts 🔔
-    - Industry Network 🤝
-
-- **CTA Section** (Bottom)
-  - H2: "Ready to Access Premium Alternative Investment Data?"
-  - Description about joining professionals
-  - Two buttons: "Start Free Access" | "Contact Sales"
-
----
-
-### 2. Registration Page (`/signInRegistration.php`)
-
-**Step 1: Choose Registration Type**
-- H1: "Join HedgeCo.Net Today"
-- 4 registration type cards:
-  
-  1. **Fund Manager** 💼
-     - "List your hedge funds, private equity..."
-     - Benefits: List unlimited funds, Access to Thousands of Users, Performance tracking, Investor communication, Monthly reporting
-     - Button: "Register as Fund Manager"
-  
-  2. **Investor** 📊
-     - "Search and discover alternative investment opportunities..."
-     - Benefits: Access to Thousands of funds, Advanced search, Fund performance analytics, Direct manager contact, Personalized recommendations
-     - Button: "Register as Investor"
-  
-  3. **Service Provider** 🏢
-     - "Connect with alternative investment professionals..."
-     - Benefits: Professional directory listing, Lead generation, Client testimonials, Marketing analytics, Industry networking
-     - Button: "Register as Service Provider"
-  
-  4. **News Member** 📰
-     - "Stay informed with latest alternative investment news..."
-     - Benefits: Daily news updates, Market analysis reports, Industry newsletters, Exclusive interviews, Research publications
-     - Button: "Register for News Access"
-
-- **Why Join Section** (Bottom)
-  - 4 benefit cards: Completely Free 🆓, Global Reach 🌍, Secure Platform 🔒, Performance Tracking 📈
-
-**Step 2: Investor Registration Form**
-*(Example - Investor selected)*
+### Step 2: Investor Registration Form
+Path: `/registration/investors/register.php`
 
 **Your Contact Information:**
-- First Name* | Last Name* (2-column)
-- Company* | Position or Job Title* (2-column)
-- Address (No P.O. Boxes)* | Line 2 (2-column)
-- Town/City* | State/Province* (2-column)
-- Zip/Postal Code* | Country* dropdown (2-column)
+- First Name* | Last Name*
+- Company* | Position or Job Title*
+- Address (No P.O. Boxes)* | Line 2
+- Town/City* | State/Province*
+- Zip/Postal Code* | Country* (dropdown)
 
 **Phone Number:**
-- Telephone Country Code* (dropdown) | Telephone Number* (2-column)
-- Example placeholder: "561-295-3709"
+- Telephone Country Code* (dropdown)
+- Telephone Number* (placeholder: "561-295-3709")
 
 **Account Login Information:**
-- Email Address (username)* - placeholder: "firstname@mycompany.com"
+- Email Address (username)* (placeholder: "firstname@mycompany.com")
 - Password*
 
 **Newsletter Signup:**
@@ -203,407 +243,234 @@ HedgeCo.Net is an alternative investments database platform serving hedge fund m
 - Subscribe To Our Weekly Newsletter: ○ Yes (default) ○ No
 
 **Terms & Conditions:**
-- Full legal terms displayed in scrollable box
+- Full legal terms in scrollable box
+- Key provision: *"By using restricted areas, you represent that you are an 'accredited investor,' 'qualified purchaser,' or 'qualified client'"*
 - Checkbox: "I agree to the above terms of use.*"
 
-- Button: "Continue With My Registration" (teal filled)
+**Submit:** "Continue With My Registration" button
 
-**⚠️ Note:** Registration requires admin approval before access is granted.
+### Post-Registration Flow
+1. User submits registration
+2. Email verification sent
+3. Admin reviews accredited investor status
+4. **Both approvals required** before full access granted
+5. Until approved: user can log in but sees restricted/teaser data only
 
 ---
 
-### 3. Login Page (`/sign-in.php`)
-- Centered card layout
+## 🔑 Login Page (`/sign-in.php`)
+
+- Centered card on gradient background
 - H2: "Login to Your Account" (teal text)
-- Form fields:
-  - Email Address (label), textbox with placeholder "your@example.com"
-  - Password (label), textbox with placeholder "********"
+- Form:
+  - Email Address (placeholder: "your@example.com")
+  - Password (placeholder: "********")
   - Login button (teal filled, full width)
   - "Forgot Password?" link → `/account/password.php?request=reset`
-  - "Not a member? Create Account" link → `/signInRegistration.php`
+  - Divider: "OR"
+  - "Not a member? Create Account" → `/signInRegistration.php`
 
-**🔐 NO Google OAuth or social login options visible.**
-
----
-
-### 4. Hedgeducation (`/hedgeducation/`)
-
-**Hero Section:**
-- Badge: "📚 Learning Hub"
-- H1: "HEDGEDUCATION"
-- Subtitle: "Your gateway to the world of hedge funds and alternative investments"
-
-**Hedgeducation New Topics:**
-- H3 with 📚 icon
-- List of 10 educational articles:
-  1. 📈 Hedge Funds 101: Strategies, Fees, and Portfolio Role
-  2. 🚀 Venture Capital Origins: ARDC, DEC, and the SBIC Framework
-  3. 💼 Private Equity Buyouts: LBOs and Value Creation
-  4. 🏢 What Is an SPV? Structure, Uses & SPV vs. Funds
-  5. 📊 How Alternatives Fit: Lessons from the Endowment Model
-  6. 💰 Liquidity, the J‑Curve, Capital Calls & Distributions
-  7. ✅ Eligibility & Regulations
-  8. 🔍 The Taxonomy of Alternatives: Types, Drivers, Examples
-  9. 📋 Alternative Investments Due Diligence Checklist
-  10. 📜 The Origins of Alternative Investments: From Hedging to a $5 Trillion Pillar
-
-**Alternative Investing 101:**
-- H2 heading
-- Descriptive paragraph about Hedgeducation
-- 4 category cards (2x2):
-  - Industry Overview 📊 → `industry-overview.php`
-  - New to Hedge Funds 🚀 → `new-to-hedge-funds.php`
-  - Hedge Fund FAQ ❓ → `faq.php`
-  - Hedge Fund Glossary 📖 → `hedge-fund-glossary/`
-
-**Terms In Focus:**
-- H3: "📖 Terms In Focus"
-- Glossary term cards:
-  - Alpha
-  - Beta
-  - Fund of Funds
-  - General Partner
-  - View Complete Glossary → link to full glossary
+**🔐 NO Google OAuth or social login options.**
 
 ---
 
-### 5. About Page (`/about/`)
+## 📚 Hedgeducation Section (`/hedgeducation/`)
 
 **Hero:**
-- H1: "Our Story"
-- Subtitle: "From pioneering hedge fund transparency to building..."
+- Badge: "📚 Learning Hub"
+- H1: "HEDGEDUCATION"
+- Subtitle: "Your gateway to the world of hedge funds..."
 
-**History Narrative:**
-- Multiple paragraphs about founding in 2002
-- 2025 Relaunch Mission box with checkmarks:
-  - ✅ Expand coverage beyond hedge funds
-  - ✅ Deliver modern, advisor-focused experience with AI
-  - ✅ Keep HedgeCo.net the only truly free alternatives database
+**New Topics Section:**
+10 educational articles with emoji icons
 
-**Timeline: "Our Journey"**
-- Vertical timeline with year markers:
-  - 2001-2002: Founding
-  - 2004: Expansion into Marketing & Web Services
-  - 2005: Industry Recognition
-  - 2006-2007: Early Affiliates
-  - 2008: Strategic Growth & Investment
-  - 2010-2012: Scaling Services
-  - 2013: Rapid Scale
-  - 2014: Technology Breakthrough
-  - 2015-2019: SmartX Era
-  - 2020-2023: SmartX Recognition & Monetization
-  - 2024-2025: Return to HedgeCo
+**Alternative Investing 101:**
+4 category cards:
+- Industry Overview 📊
+- New to Hedge Funds 🚀
+- Hedge Fund FAQ ❓
+- Hedge Fund Glossary 📖
 
-**2025 Relaunch Vision:**
-- H2 heading
-- Vision statement
-- CTA button: "Join the Relaunch"
+**Terms In Focus:**
+Glossary highlights: Alpha, Beta, Fund of Funds, General Partner
 
 ---
 
-### 6. Conferences Page (`/conferences/`)
+## 🗓️ Conferences Page (`/conferences/`)
 
 **Hero:**
 - H1: "Alternative Investment Conferences"
-- Description about connecting with industry leaders
 
 **Filters:**
 - Location dropdown (all countries)
-- Date Range dropdown: All Dates, Current Month, Next Month, Next Quarter, Next Year
-- Search textbox: "Search conferences..."
+- Date Range: All Dates, Current Month, Next Month, Next Quarter, Next Year
+- Search textbox
 - Apply Filters button
 
-**Upcoming Conferences:**
-- H2: "Upcoming Conferences"
-- Conference cards (grid layout):
-  - Conference image/logo
-  - Date range (📅 Feb 23, 2026 - Feb 26, 2026)
-  - Conference title (H3)
-  - Venue info (🏢 icon)
-  - Event type badge (📍 physical)
-  - Buttons: "✨ Register Now" | "📋 View Details"
+**Conference Cards:**
+- Image/Logo
+- Date range with 📅 icon
+- Title (H3)
+- Venue with 🏢 icon
+- Type badge (📍 physical/virtual)
+- "✨ Register Now" | "📋 View Details" buttons
 
 ---
 
-### 7. News Page (`/news/`)
+## 📰 News Page (`/news/`)
 
-**HedgeCo Insights:**
-- H2: "HedgeCo Insights" with "View All News" link
-- Article cards (list layout):
-  - Category link (e.g., "Hedge Fund Strategies")
-  - Article title (H3 with link)
-  - Excerpt paragraph
-  - Date | Read time (e.g., "February 17, 2026 | 4 min read")
+**HedgeCo Insights Section:**
+- H2 with "View All News" link
+- Article cards with:
+  - Category link
+  - Title (H3)
+  - Excerpt
+  - Date | Read time
 
-**Explore Alternative Investment Categories:**
-- H2 heading
-- Description paragraph
-- Large grid of category cards (60+ categories):
-  - Each card shows: 🏦 icon, Category name (H3), Post count
-  - Examples: Activist Funds (175), Bitcoin (37), Crypto (93), Hedge Fund Strategies (394), HedgeCo News (9,514), Syndicated (29,416)
+**Category Grid:**
+60+ news categories with post counts
 
 ---
 
-### 8. Service Providers Page (`/service-providers/`)
+## 👥 Service Providers (`/service-providers/`)
 
 **Hero:**
-- Badge: "The Leading Alternative Investment Network"
 - H1: "Service Providers Directory"
-- Description
 - Stats: "1316+ Service Providers" | "78+ Service Categories"
 
-**Search Section:**
-- Search textbox: "Search by company name, service, or keyword..."
+**Search:**
+- Keyword search
 - Category dropdown (78 categories)
 - Country dropdown
 - Search button
 
-**Service Provider Categories:**
-- H2: "Service Provider Categories"
-- Grid of category cards (78 categories):
-  - Each card: icon image, count badge, category name (H3)
-  - Examples: Accounting Firms (91), Administrators (73), Attorneys/Lawyers (61), Technology Vendors (122), Consultants (116)
+**Category Grid:**
+78 service provider categories with counts
 
 ---
 
-### 9. Database/Fund Search (`/funds/search.php`)
-**⚠️ REQUIRES AUTHENTICATION**
-- Redirects to login page if not authenticated
-- Appears to be the core product feature behind registration wall
-
----
-
-### 10. Contact Page (`/contact-us.php`)
-
-**Hero:**
-- H1: "Contact Us"
-- Description about getting in touch
+## 📞 Contact Page (`/contact-us.php`)
 
 **Contact Form:**
-- Full Name*
-- Email Address*
-- Phone (optional)
-- Subject* dropdown: General Inquiry, Technical Support, Partnership Opportunities, Data & Research, Membership Questions, Press & Media, Other
-- Message* (textarea)
+- Full Name*, Email*, Phone, Subject* (dropdown), Message*
 - "Send Message" button
 
-**Contact Info Cards:**
-- 📧 Email Us: support@hedgeco.net
-- 📞 Call Us: +1 (561) 295 3709, Mon-Fri 9AM-6PM ET
-- 🌐 Social Media: Twitter link
+**Contact Info:**
+- 📧 support@hedgeco.net
+- 📞 +1 (561) 295 3709
+- 🌐 Twitter link
 
 **Contact by Department:**
-- 6 department cards:
-  - Sales & Partnerships
-  - Technical Support
-  - Data & Research
-  - Press & Media
-  - Legal & Compliance
-  - Fund Managers
-  - All redirect to support@hedgeco.net
+6 department cards (all → support@hedgeco.net)
 
-**Our Offices:**
+**Office:**
 - South Florida HedgeCo, LLC
 - Palm Beach Gardens, FL 33418
-- Mon-Fri: 9:00 AM - 6:00 PM ET
 
 **FAQ Accordion:**
-- How quickly will I receive a response?
-- What information should I include in my message?
-- Do you offer phone support?
-- Can I schedule a demo or consultation?
-- How do I report a technical issue?
+5 common questions
 
 ---
 
 ## 🔤 Typography
 
 ### Fonts
-- **Primary Font:** System font stack (Tailwind default)
-  - `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
-- **Headings:** Same font, different weights
+- **Primary:** System font stack (Tailwind default)
+- `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
 
-### Font Sizes (Tailwind Scale)
-| Element | Size | Class |
-|---------|------|-------|
-| H1 (Hero) | 36-48px | `text-4xl` / `text-5xl` |
-| H2 (Section) | 30px | `text-3xl` |
-| H3 (Cards) | 20-24px | `text-xl` / `text-2xl` |
-| Body | 16px | `text-base` |
-| Small | 14px | `text-sm` |
-
-### Font Weights
-- **Bold/Semibold:** Headings, buttons, labels
-- **Regular/Normal:** Body text, descriptions
-- **Medium:** Navigation items
-
----
-
-## 📐 Spacing & Layout Patterns
-
-### Container
-- Max-width container with responsive padding
-- Centered layout
-
-### Section Spacing
-- Section padding: `py-12` to `py-20` (48-80px vertical)
-- Inner content padding: `px-4` to `px-8`
-
-### Card Grid Patterns
-- 2 columns on tablet, 3-4 columns on desktop
-- Gap: `gap-6` (24px) or `gap-8` (32px)
-
-### Card Styles
-- Background: White
-- Border radius: `rounded-lg` (8px)
-- Shadow: `shadow-md` or `shadow-lg`
-- Padding: `p-6` (24px)
+### Font Sizes (Tailwind)
+| Element | Class |
+|---------|-------|
+| H1 Hero | `text-4xl` / `text-5xl` |
+| H2 Section | `text-3xl` |
+| H3 Cards | `text-xl` / `text-2xl` |
+| Body | `text-base` (16px) |
+| Small | `text-sm` (14px) |
 
 ---
 
 ## 🔘 Button Styles
 
-### Primary Button (Filled)
-```css
-background: #0d9488 (teal-600)
-color: white
-padding: 12px 24px
-border-radius: 8px (rounded-lg)
-font-weight: 500-600
-hover: #0f766e (teal-700)
-```
+### Primary (Filled)
+- Background: `#0d9488` (teal-600)
+- Text: white
+- Hover: `#0f766e` (teal-700)
+- Padding: `px-6 py-3`
+- Border radius: `rounded-lg` (8px)
 
-### Secondary Button (Outlined)
-```css
-background: transparent
-border: 1px solid #0d9488
-color: #0d9488
-padding: 12px 24px
-border-radius: 8px
-hover: background #0d9488, color white
-```
+### Secondary (Outlined)
+- Border: 1px solid teal
+- Text: teal
+- Hover: fill teal, text white
 
-### Button Sizes
-- Default: `px-6 py-3`
-- Small: `px-4 py-2`
-- Large: `px-8 py-4`
+### Status Badges
+- Rounded pills with status-specific colors
+- Small text (`text-xs`)
 
 ---
 
-## 📝 Form Styles
+## 📁 URL Structure
 
-### Text Inputs
-```css
-background: white
-border: 1px solid #e2e8f0 (slate-200)
-border-radius: 6px (rounded-md)
-padding: 10px 12px
-focus: border-color #0d9488, ring
 ```
+/                               Homepage
+/sign-in.php                    Login
+/signInRegistration.php         Registration type selection
+/registration/investors/        Investor registration form
 
-### Dropdowns/Select
-- Same styling as text inputs
-- Native select with custom arrow
+# SPV Section (NEW in staging)
+/spv/search.php                 SPV search/listing (teaser data)
+/spv/overview/{id}              SPV detail page
 
-### Labels
-- Font size: 14px
-- Font weight: 500 (medium)
-- Color: slate-700
-- Margin bottom: 4-8px
+# Fund Section (PROTECTED)
+/funds/search.php               Fund database (requires login)
 
-### Checkboxes/Radio
-- Custom styled (teal accent)
-- Labels inline
-
----
-
-## 📱 Responsive Breakpoints
-
-Uses Tailwind defaults:
-- `sm`: 640px
-- `md`: 768px
-- `lg`: 1024px
-- `xl`: 1280px
-- `2xl`: 1536px
-
-### Mobile Considerations
-- Navigation collapses to hamburger menu
-- Cards stack to single column
-- Footer stacks vertically
+# Public Pages
+/news/                          News index
+/news/category/{slug}           News by category
+/conferences/                   Conferences list
+/hedgeducation/                 Education center
+/service-providers/             Service providers
+/about/                         About page
+/contact-us.php                 Contact form
+/termsofuse.php                 Terms
+/privacypolicy.php              Privacy policy
+```
 
 ---
 
 ## 🛠️ Technical Stack
 
-### Frontend
-- **CSS Framework:** Tailwind CSS (CDN version detected)
-- **JavaScript:** jQuery 3.x + jQuery Migrate 3.3.1
-- **No detected frontend framework** (React/Vue) - appears to be traditional PHP pages
-
-### Libraries Detected
-- jQuery
-- jQuery Migrate
-- Tailwind CSS (CDN)
+- **CSS:** Tailwind CSS (CDN)
+- **JavaScript:** jQuery 3.x + Migrate 3.3.1
+- **Backend:** PHP (traditional pages)
+- **No frontend framework** (React/Vue) detected
 
 ---
 
-## 🔐 Authentication Flow
+## ⚠️ Key Implementation Notes
 
-### Login
-1. User visits protected page (e.g., `/funds/search.php`)
-2. Redirected to `/sign-in.php` with `ref` parameter
-3. Login with email/password OR Google OAuth
-4. After login, redirected to original URL
+1. **Dual Approval System**
+   - Email verification required
+   - Accredited investor status verification by admin
+   - Both must pass before full data access
 
-### Registration
-1. User selects registration type (4 options)
-2. Fills out detailed form with contact info
-3. Accepts terms & conditions
-4. Submits for **admin approval**
-5. Account activated after approval
+2. **SPV vs Fund Access Patterns**
+   - SPVs show teaser data to anonymous users
+   - Funds completely block anonymous users (redirect)
 
-### Protected Areas
-- Fund Database (`/funds/search.php`)
-- Advanced Search
-- Potentially user account/dashboard areas
+3. **Hidden Field Pattern**
+   - Valuation field shows "Hidden" text
+   - "Login to View" link appears
+   - Documents section shows lock icon + modal
 
----
+4. **No Social Auth**
+   - Email/password only
+   - No Google OAuth or similar
 
-## 📋 Additional Notes
-
-1. **Google OAuth available** - Sign-in page has "Sign in with Google" option
-2. **Admin approval required** for new registrations
-3. **Tailwind CDN** in production (warning in console)
-4. **Some 404 errors** for service provider icons
-5. **Copyright shows 2025** despite current date being 2026
-6. **Phone number format:** US format with country code dropdown
+5. **Domain Difference**
+   - Staging: staging.hedgeco.net
+   - Production: hedgeco.net / www.hedgeco.net
 
 ---
 
-## 📁 URL Structure Summary
-
-```
-/                           Homepage
-/sign-in.php               Login
-/signInRegistration.php    Registration type selection
-/registration/investors/   Investor registration form
-/funds/search.php          Fund database (protected)
-/news/                     News index
-/news/category/{slug}      News by category
-/news/MM/YYYY/{slug}.html  Individual article
-/conferences/              Conferences list
-/hedgeducation/            Education center
-/hedgeducation/{slug}/     Education article
-/hedge-fund-glossary/      Glossary
-/service-providers/        Service providers directory
-/service-providers/{category}/ Category page
-/about/                    About page
-/contact-us.php            Contact form
-/termsofuse.php            Terms
-/privacypolicy.php         Privacy policy
-/account/password.php      Password reset
-```
-
----
-
-*Audit complete. This document contains all information needed for exact frontend recreation.*
+*Audit complete. This document contains all information needed for exact frontend recreation including the critical access control patterns.*
