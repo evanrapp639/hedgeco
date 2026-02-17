@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Clock, Mail, ArrowLeft } from 'lucide-react';
 
-export default function PendingApprovalPage() {
-  const router = useRouter();
+function PendingApprovalContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
 
@@ -88,5 +87,27 @@ export default function PendingApprovalPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function PendingApprovalFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="max-w-md w-full space-y-8 text-center">
+        <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 mb-6">
+          <Clock className="h-10 w-10 text-amber-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Loading...</h1>
+      </div>
+    </div>
+  );
+}
+
+export default function PendingApprovalPage() {
+  return (
+    <Suspense fallback={<PendingApprovalFallback />}>
+      <PendingApprovalContent />
+    </Suspense>
   );
 }
