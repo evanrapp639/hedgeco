@@ -133,14 +133,14 @@ export function InquiryForm({ fundName, fundSlug, className, onSuccess }: Inquir
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
                 value={formData.firstName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                className={errors.firstName ? "border-red-500" : ""}
+                className={cn("w-full min-h-[44px]", errors.firstName ? "border-red-500" : "")}
               />
               {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
             </div>
@@ -150,14 +150,14 @@ export function InquiryForm({ fundName, fundSlug, className, onSuccess }: Inquir
                 id="lastName"
                 value={formData.lastName}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                className={errors.lastName ? "border-red-500" : ""}
+                className={cn("w-full min-h-[44px]", errors.lastName ? "border-red-500" : "")}
               />
               {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
             </div>
           </div>
 
           {/* Contact Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
               <Input
@@ -165,7 +165,7 @@ export function InquiryForm({ fundName, fundSlug, className, onSuccess }: Inquir
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className={errors.email ? "border-red-500" : ""}
+                className={cn("w-full min-h-[44px]", errors.email ? "border-red-500" : "")}
               />
               {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
             </div>
@@ -176,6 +176,7 @@ export function InquiryForm({ fundName, fundSlug, className, onSuccess }: Inquir
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full min-h-[44px]"
               />
             </div>
           </div>

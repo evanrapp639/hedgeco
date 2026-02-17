@@ -2,14 +2,34 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Wrapper for mobile horizontal scroll with visual indicators
+const TableContainer = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "relative w-full overflow-x-auto",
+      // Scroll shadow indicators
+      "[&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full",
+      // Mobile: add padding for scroll indicator
+      "pb-2 md:pb-0",
+      className
+    )}
+    {...props}
+  />
+))
+TableContainer.displayName = "TableContainer"
+
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
+  <div className="relative w-full overflow-auto -mx-4 px-4 md:mx-0 md:px-0">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn("w-full caption-bottom text-sm min-w-[600px] md:min-w-0", className)}
       {...props}
     />
   </div>
@@ -107,6 +127,7 @@ TableCaption.displayName = "TableCaption"
 
 export {
   Table,
+  TableContainer,
   TableHeader,
   TableBody,
   TableFooter,

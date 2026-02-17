@@ -140,16 +140,17 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+            {/* Action buttons - full width on mobile */}
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <Button variant="outline" size="sm" className="flex-1 lg:flex-none min-h-[44px]">
                 <Star className="h-4 w-4 mr-1" />
-                Add to Watchlist
+                <span className="hidden sm:inline">Add to </span>Watchlist
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="flex-1 lg:flex-none min-h-[44px]">
                 <Share2 className="h-4 w-4 mr-1" />
                 Share
               </Button>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto sm:flex-1 lg:flex-none min-h-[44px]">
                 <MessageSquare className="h-4 w-4 mr-1" />
                 Contact Manager
               </Button>
@@ -176,13 +177,15 @@ export default function FundDetailPage({ params }: { params: Promise<{ slug: str
               benchmarkName={fund.primaryBenchmark || "S&P 500"}
             />
 
-            {/* Tabs */}
+            {/* Tabs - scrollable on mobile */}
             <Tabs defaultValue="overview">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="statistics">Statistics</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                <TabsList className="w-max md:w-full justify-start">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="statistics">Statistics</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="overview" className="mt-4 space-y-6">
                 {/* Description */}

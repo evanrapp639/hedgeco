@@ -15,6 +15,9 @@ import { pdfRouter } from './pdf';
 import { emailRouter } from './email';
 import { paymentRouter } from './payment';
 import { analyticsRouter } from './analytics';
+import { notificationRouter } from './notification';
+import { documentRouter } from './document';
+import { savedSearchRouter } from './savedSearch';
 
 export const appRouter = router({
   fund: fundRouter,
@@ -31,6 +34,9 @@ export const appRouter = router({
   email: emailRouter,
   payment: paymentRouter,
   analytics: analyticsRouter,
+  notification: notificationRouter,
+  document: documentRouter,
+  savedSearch: savedSearchRouter,
 });
 
 // Export type definition for client

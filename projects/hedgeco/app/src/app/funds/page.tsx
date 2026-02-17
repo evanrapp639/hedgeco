@@ -122,19 +122,21 @@ export default function FundsPage() {
 
           {/* Search and Filters */}
           <div className="mt-6 space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-4">
+              {/* Search - always full width */}
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search funds by name, strategy, or manager..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 min-h-[44px] w-full"
                 />
               </div>
-              <div className="flex gap-2">
+              {/* Filters - scrollable on mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible md:flex-wrap">
                 <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-[140px] md:w-[160px] min-h-[44px] flex-shrink-0">
                     <SelectValue placeholder="Fund Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -146,7 +148,7 @@ export default function FundsPage() {
                   </SelectContent>
                 </Select>
                 <Select value={selectedStrategy} onValueChange={setSelectedStrategy}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-[140px] md:w-[160px] min-h-[44px] flex-shrink-0">
                     <SelectValue placeholder="Strategy" />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,10 +161,11 @@ export default function FundsPage() {
                 </Select>
                 <Button
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 min-h-[44px] flex-shrink-0"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
-                  More Filters
+                  <span className="hidden sm:inline">More Filters</span>
+                  <span className="sm:hidden">Filters</span>
                   {activeFilters > 0 && (
                     <Badge variant="secondary" className="ml-1">
                       {activeFilters}
@@ -250,24 +253,24 @@ export default function FundsPage() {
           <div className="grid gap-4">
             {funds.map((fund) => (
               <Link key={fund.id} href={`/funds/${fund.slug}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      {/* Left: Fund Info */}
+                <Card className="hover:shadow-md transition-shadow cursor-pointer active:scale-[0.99] touch-manipulation">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col gap-4">
+                      {/* Fund Info - always on top */}
                       <div className="flex-1">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-semibold text-slate-900">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="text-base md:text-lg font-semibold text-slate-900 line-clamp-1">
                                 {fund.name}
                               </h3>
                               {fund.featured && (
-                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
                                   Featured
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-slate-500">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-3.5 w-3.5" />
                                 {getFundTypeLabel(fund.type)}
@@ -280,7 +283,7 @@ export default function FundsPage() {
                                 </span>
                               )}
                               {fund.inceptionDate && (
-                                <span className="flex items-center gap-1">
+                                <span className="hidden sm:flex items-center gap-1">
                                   <Calendar className="h-3.5 w-3.5" />
                                   Since {new Date(fund.inceptionDate).getFullYear()}
                                 </span>
@@ -290,22 +293,22 @@ export default function FundsPage() {
                         </div>
                       </div>
 
-                      {/* Right: Stats */}
-                      <div className="flex flex-wrap lg:flex-nowrap items-center gap-6 lg:gap-8">
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                      {/* Stats Grid - responsive layout */}
+                      <div className="grid grid-cols-3 md:grid-cols-5 gap-4 md:gap-6 pt-3 border-t border-slate-100">
+                        <div className="text-center md:text-left">
+                          <div className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide mb-0.5 md:mb-1">
                             AUM
                           </div>
-                          <div className="text-lg font-semibold text-slate-900">
+                          <div className="text-sm md:text-lg font-semibold text-slate-900">
                             {formatCurrency(fund.aum)}
                           </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                        <div className="text-center md:text-left">
+                          <div className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide mb-0.5 md:mb-1">
                             YTD
                           </div>
                           <div
-                            className={`text-lg font-semibold flex items-center justify-center gap-1 ${
+                            className={`text-sm md:text-lg font-semibold flex items-center justify-center md:justify-start gap-1 ${
                               !fund.statistics?.ytdReturn
                                 ? "text-slate-400"
                                 : Number(fund.statistics.ytdReturn) >= 0
@@ -315,19 +318,19 @@ export default function FundsPage() {
                           >
                             {fund.statistics?.ytdReturn !== null && fund.statistics?.ytdReturn !== undefined &&
                               (Number(fund.statistics.ytdReturn) >= 0 ? (
-                                <TrendingUp className="h-4 w-4" />
+                                <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
                               ) : (
-                                <TrendingDown className="h-4 w-4" />
+                                <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
                               ))}
                             {formatPercent(fund.statistics?.ytdReturn)}
                           </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                        <div className="text-center md:text-left">
+                          <div className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide mb-0.5 md:mb-1">
                             1 Year
                           </div>
                           <div
-                            className={`text-lg font-semibold ${
+                            className={`text-sm md:text-lg font-semibold ${
                               !fund.statistics?.oneYearReturn
                                 ? "text-slate-400"
                                 : Number(fund.statistics.oneYearReturn) >= 0
@@ -338,7 +341,7 @@ export default function FundsPage() {
                             {formatPercent(fund.statistics?.oneYearReturn)}
                           </div>
                         </div>
-                        <div className="text-center">
+                        <div className="hidden md:block text-left">
                           <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                             Sharpe
                           </div>
@@ -348,7 +351,7 @@ export default function FundsPage() {
                               : "N/A"}
                           </div>
                         </div>
-                        <div className="text-center">
+                        <div className="hidden md:block text-left">
                           <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                             Min Invest
                           </div>
