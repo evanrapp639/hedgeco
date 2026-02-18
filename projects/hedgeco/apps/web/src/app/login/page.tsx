@@ -47,7 +47,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <TrendingUp className="h-10 w-10 text-hedgeco-blue" />
+            <TrendingUp className="h-10 w-10 text-hedgeco-primary" />
             <span className="text-2xl font-bold text-slate-900">HedgeCo.Net</span>
           </Link>
         </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href="/forgot-password"
-                    className="text-sm text-hedgeco-blue hover:underline"
+                    className="text-sm text-hedgeco-primary hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
               <div className="mt-6 text-center text-sm text-slate-600">
                 Don&apos;t have an account?{" "}
-                <Link href="/register" className="text-hedgeco-blue hover:underline font-medium">
+                <Link href="/register" className="text-hedgeco-primary hover:underline font-medium">
                   Create one now
                 </Link>
               </div>

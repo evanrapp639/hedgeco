@@ -63,13 +63,17 @@ export function Header() {
           <div className="hedgeco-container">
             <div className="flex h-16 items-center justify-between">
               {/* Logo */}
-              <Link href="/dashboard" className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-hedgeco-blue to-hedgeco-cyan flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">H</span>
+              <Link href="/" className="flex items-center space-x-3">
+                <div className="h-10 w-10 flex items-center justify-center">
+                  <img 
+                    src="/assets/logo.svg" 
+                    alt="HedgeCo.Net Logo" 
+                    className="h-8 w-8"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold text-hedgeco-text-dark">HedgeCo.Net</span>
-                  <span className="text-xs text-hedgeco-text-light">Dashboard</span>
+                  <span className="text-xs text-hedgeco-text-light">Alternative Investment Database</span>
                 </div>
               </Link>
 
@@ -77,31 +81,31 @@ export function Header() {
               <nav className="hidden lg:flex items-center space-x-8">
                 <Link 
                   href="/dashboard" 
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Dashboard
                 </Link>
                 <Link 
                   href="/funds" 
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Funds
                 </Link>
                 <Link 
                   href="/news" 
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   News
                 </Link>
                 <Link 
                   href="/messages" 
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Messages
                 </Link>
                 <Link 
                   href="/reports" 
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Reports
                 </Link>
@@ -113,7 +117,7 @@ export function Header() {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  className="text-hedgeco-text-light hover:text-hedgeco-blue"
+                  className="text-hedgeco-text-light hover:text-hedgeco-primary"
                 >
                   <Search className="h-5 w-5" />
                 </Button>
@@ -125,7 +129,7 @@ export function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2 hover:bg-transparent">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-hedgeco-blue to-hedgeco-cyan flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-hedgeco-primary to-hedgeco-cyan flex items-center justify-center">
                         <span className="text-white text-sm font-semibold">
                           {user?.profile?.firstName?.[0] || user?.email?.[0] || 'U'}
                         </span>
@@ -194,12 +198,16 @@ export function Header() {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-hedgeco-blue to-hedgeco-cyan flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
+              <div className="h-10 w-10 flex items-center justify-center">
+                <img 
+                  src="/assets/logo.svg" 
+                  alt="HedgeCo.Net Logo" 
+                  className="h-8 w-8"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-hedgeco-text-dark">HedgeCo.Net</span>
-                <span className="text-xs text-hedgeco-text-light">Alternative Investment Network</span>
+                <span className="text-xs text-hedgeco-text-light">Alternative Investment Database</span>
               </div>
             </Link>
 
@@ -209,7 +217,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-blue transition-colors"
+                  className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -222,7 +230,7 @@ export function Header() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="hidden md:flex text-hedgeco-text-light hover:text-hedgeco-blue"
+                className="hidden md:flex text-hedgeco-text-light hover:text-hedgeco-primary"
               >
                 <Search className="h-5 w-5" />
               </Button>
@@ -231,7 +239,7 @@ export function Header() {
               <div className="flex items-center space-x-3">
                 <Button 
                   variant="ghost" 
-                  className="text-hedgeco-text hover:text-hedgeco-blue hidden md:inline-flex"
+                  className="text-hedgeco-text hover:text-hedgeco-primary hidden md:inline-flex"
                   asChild
                 >
                   <Link href="/login">Login</Link>
@@ -250,7 +258,7 @@ export function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="lg:hidden text-hedgeco-text-light hover:text-hedgeco-blue"
+                    className="lg:hidden text-hedgeco-text-light hover:text-hedgeco-primary"
                   >
                     <Menu className="h-6 w-6" />
                   </Button>
@@ -263,7 +271,7 @@ export function Header() {
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="flex items-center space-x-3 text-hedgeco-text-dark hover:text-hedgeco-blue"
+                          className="flex items-center space-x-3 text-hedgeco-text-dark hover:text-hedgeco-primary"
                           onClick={() => setIsOpen(false)}
                         >
                           <Icon className="h-5 w-5" />
@@ -293,25 +301,25 @@ export function Header() {
               <div className="flex space-x-6 overflow-x-auto">
                 <Link 
                   href="/funds" 
-                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-blue whitespace-nowrap"
+                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Funds
                 </Link>
                 <Link 
                   href="/news" 
-                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-blue whitespace-nowrap"
+                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   News
                 </Link>
                 <Link 
                   href="/providers" 
-                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-blue whitespace-nowrap"
+                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Providers
                 </Link>
                 <Link 
                   href="/conferences" 
-                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-blue whitespace-nowrap"
+                  className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Conferences
                 </Link>

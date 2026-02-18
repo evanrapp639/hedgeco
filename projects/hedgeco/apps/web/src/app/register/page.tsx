@@ -199,9 +199,9 @@ function RegisterContent() {
                       </div>
                     )}
 
-                    <div className="bg-hedgeco-blue/10 border border-hedgeco-blue/20 rounded-lg p-4 mb-6">
-                      <h3 className="font-semibold text-hedgeco-blue-dark mb-1">Investor Account</h3>
-                      <p className="text-sm text-hedgeco-blue">
+                    <div className="bg-hedgeco-primary/10 border border-hedgeco-primary/20 rounded-lg p-4 mb-6">
+                      <h3 className="font-semibold text-hedgeco-primary-dark mb-1">Investor Account</h3>
+                      <p className="text-sm text-hedgeco-primary">
                         Get access to detailed fund data, performance metrics, and direct manager connections.
                         Accreditation verification required for full access.
                       </p>
@@ -271,11 +271,11 @@ function RegisterContent() {
                       />
                       <Label htmlFor="inv-terms" className="text-sm font-normal">
                         I agree to the{" "}
-                        <Link href="/terms" className="text-hedgeco-blue hover:underline">
+                        <Link href="/terms" className="text-hedgeco-primary hover:underline">
                           Terms of Service
                         </Link>{" "}
                         and{" "}
-                        <Link href="/privacy" className="text-hedgeco-blue hover:underline">
+                        <Link href="/privacy" className="text-hedgeco-primary hover:underline">
                           Privacy Policy
                         </Link>
                       </Label>
@@ -380,11 +380,11 @@ function RegisterContent() {
                       />
                       <Label htmlFor="mgr-terms" className="text-sm font-normal">
                         I agree to the{" "}
-                        <Link href="/terms" className="text-hedgeco-blue hover:underline">
+                        <Link href="/terms" className="text-hedgeco-primary hover:underline">
                           Terms of Service
                         </Link>{" "}
                         and{" "}
-                        <Link href="/privacy" className="text-hedgeco-blue hover:underline">
+                        <Link href="/privacy" className="text-hedgeco-primary hover:underline">
                           Privacy Policy
                         </Link>
                       </Label>
@@ -489,11 +489,11 @@ function RegisterContent() {
                       />
                       <Label htmlFor="prov-terms" className="text-sm font-normal">
                         I agree to the{" "}
-                        <Link href="/terms" className="text-hedgeco-blue hover:underline">
+                        <Link href="/terms" className="text-hedgeco-primary hover:underline">
                           Terms of Service
                         </Link>{" "}
                         and{" "}
-                        <Link href="/privacy" className="text-hedgeco-blue hover:underline">
+                        <Link href="/privacy" className="text-hedgeco-primary hover:underline">
                           Privacy Policy
                         </Link>
                       </Label>
@@ -569,11 +569,11 @@ function RegisterContent() {
                       />
                       <Label htmlFor="news-terms" className="text-sm font-normal">
                         I agree to the{" "}
-                        <Link href="/terms" className="text-hedgeco-blue hover:underline">
+                        <Link href="/terms" className="text-hedgeco-primary hover:underline">
                           Terms of Service
                         </Link>{" "}
                         and{" "}
-                        <Link href="/privacy" className="text-hedgeco-blue hover:underline">
+                        <Link href="/privacy" className="text-hedgeco-primary hover:underline">
                           Privacy Policy
                         </Link>
                       </Label>
@@ -593,7 +593,7 @@ function RegisterContent() {
         {/* Login Link */}
         <p className="text-center mt-6 text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="text-hedgeco-blue hover:underline font-medium">
+          <Link href="/login" className="text-hedgeco-primary hover:underline font-medium">
             Sign in
           </Link>
         </p>

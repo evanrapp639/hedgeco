@@ -165,7 +165,7 @@ export default function Home() {
               hedge funds, private equity, venture capital, crypto funds, and SPVs worldwide.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-hedgeco-blue-dark hover:bg-white/90 text-lg px-8" asChild>
+              <Button size="lg" className="bg-white text-hedgeco-primary-dark hover:bg-white/90 text-lg px-8" asChild>
                 <Link href="/register">
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -224,7 +224,7 @@ export default function Home() {
                   <CardDescription className="text-hedgeco-text">
                     {asset.description}
                   </CardDescription>
-                  <Button variant="ghost" className="mt-4 p-0 h-auto text-hedgeco-blue hover:text-hedgeco-blue-dark" asChild>
+                  <Button variant="ghost" className="mt-4 p-0 h-auto text-hedgeco-primary hover:text-hedgeco-primary-dark" asChild>
                     <Link href={`/funds?type=${asset.name.toLowerCase().replace(/\s+/g, '-')}`}>
                       Explore {asset.name}
                       <ChevronRight className="ml-1 h-4 w-4" />
@@ -257,7 +257,7 @@ export default function Home() {
               <Card key={article.title} className="hedgeco-card">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="bg-hedgeco-blue/10 text-hedgeco-blue border-hedgeco-blue/20">
+                    <Badge variant="outline" className="bg-hedgeco-primary/10 text-hedgeco-primary border-hedgeco-primary/20">
                       {article.date}
                     </Badge>
                   </div>
@@ -267,7 +267,7 @@ export default function Home() {
                   <CardDescription className="text-hedgeco-text line-clamp-3">
                     {article.excerpt}
                   </CardDescription>
-                  <Button variant="ghost" className="mt-4 p-0 h-auto text-hedgeco-blue hover:text-hedgeco-blue-dark" asChild>
+                  <Button variant="ghost" className="mt-4 p-0 h-auto text-hedgeco-primary hover:text-hedgeco-primary-dark" asChild>
                     <Link href={article.href}>
                       Read More
                       <ChevronRight className="ml-1 h-4 w-4" />
@@ -295,8 +295,8 @@ export default function Home() {
             {features.map((feature) => (
               <Card key={feature.title} className="hedgeco-card">
                 <CardHeader>
-                  <div className="h-12 w-12 rounded-lg bg-hedgeco-blue/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-hedgeco-blue" />
+                  <div className="h-12 w-12 rounded-lg bg-hedgeco-primary/10 flex items-center justify-center mb-4">
+                    <feature.icon className="h-6 w-6 text-hedgeco-primary" />
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
@@ -319,7 +319,7 @@ export default function Home() {
             Join Thousands of investment professionals who rely on HedgeCo.Net for their alternative investment research.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-hedgeco-blue-dark hover:bg-white/90 text-lg px-8" asChild>
+            <Button size="lg" className="bg-white text-hedgeco-primary-dark hover:bg-white/90 text-lg px-8" asChild>
               <Link href="/register">Create Free Account</Link>
             </Button>
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-lg px-8" asChild>

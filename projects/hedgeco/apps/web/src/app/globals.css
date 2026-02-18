@@ -17,7 +17,7 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 40%; /* hedgeco-blue: #1e40af */
+    --primary: 161 84% 32%; /* hedgeco-primary: #059669 */
     --primary-foreground: 210 40% 98%;
     --secondary: 214 32% 91%;
     --secondary-foreground: 222 47% 11%;
@@ -29,7 +29,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 221 83% 40%;
+    --ring: 161 84% 32%;
     --chart-1: 221 83% 40%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -75,11 +75,11 @@
   
   /* HedgeCo specific styles */
   .hedgeco-gradient {
-    @apply bg-gradient-to-br from-hedgeco-blue-dark via-hedgeco-blue to-hedgeco-cyan;
+    @apply bg-gradient-to-br from-hedgeco-dark via-hedgeco-primary to-hedgeco-cyan;
   }
   
   .hedgeco-card {
-    @apply bg-hedgeco-white border border-hedgeco-border rounded-lg shadow-sm transition-all duration-200 hover:border-hedgeco-blue-light hover:shadow-lg;
+    @apply bg-hedgeco-white border border-hedgeco-border rounded-lg shadow-sm transition-all duration-200 hover:border-hedgeco-primary-light hover:shadow-lg;
   }
   
   .hedgeco-button-primary {

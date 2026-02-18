@@ -9,24 +9,39 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // HedgeCo Design System - Exact replication of staging.hedgeco.net
+        // EXACT colors from staging.hedgeco.net - Updated 2026-02-18
         hedgeco: {
-          'blue-dark': '#0f1a3d',
-          'blue': '#1e40af',
-          'blue-light': '#3b82f6',
-          'cyan': '#06b6d4',
-          'dark': '#0f172a',
-          'light': '#f8fafc',
-          'white': '#ffffff',
-          'text-dark': '#1e293b',
-          'text': '#475569',
-          'text-light': '#64748b',
-          'green': '#10b981',
-          'purple': '#8b5cf6',
-          'orange': '#f97316',
-          'red': '#ef4444',
-          'border': '#e2e8f0',
-          'border-dark': '#cbd5e1',
+          // Primary colors from staging
+          'primary': '#059669',      // Main green - EXACT from staging
+          'primary-light': '#10b981', // Light green - EXACT from staging
+          'cyan': '#0891b2',         // Cyan - EXACT from staging
+          
+          // Text colors from staging
+          'dark': '#0f172a',         // Dark text - EXACT from staging
+          'text-dark': '#1e293b',    // Darker text - EXACT from staging
+          'text': '#334155',         // Medium text - EXACT from staging
+          'text-light': '#64748b',   // Light text - EXACT from staging
+          'text-lighter': '#9ca3af', // Lighter text - EXACT from staging
+          
+          // Background colors from staging
+          'light': '#f8fafc',        // Light background - EXACT from staging
+          'white': '#ffffff',        // White - EXACT from staging
+          'gray-light': '#f1f5f9',   // Light gray - EXACT from staging
+          'gray': '#e2e8f0',         // Gray - EXACT from staging
+          'gray-dark': '#cbd5e1',    // Dark gray - EXACT from staging
+          
+          // Border colors from staging
+          'border': '#e5e7eb',       // Border - EXACT from staging
+          'border-dark': '#d1d5db',  // Dark border
+          
+          // Accent colors
+          'red': '#ef4444',          // Red - EXACT from staging
+          'red-dark': '#dc2626',     // Dark red - EXACT from staging
+          
+          // Legacy names for compatibility (will phase out)
+          'blue-dark': '#0f172a',    // Same as 'dark'
+          'blue': '#059669',         // Same as 'primary' (GREEN, not blue!)
+          'blue-light': '#10b981',   // Same as 'primary-light'
         },
         // Shadcn compatibility
         background: 'hsl(var(--background))',
