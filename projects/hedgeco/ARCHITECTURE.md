@@ -35,14 +35,31 @@ Auth:          NextAuth.js
 ### Backend
 ```
 Runtime:       Node.js 20+ (LTS)
-Framework:     tRPC or Hono (type-safe APIs)
+Framework:     Hono + Operations Kernel (type-safe APIs + audit)
 Language:      TypeScript
 ORM:           Prisma
 Validation:    Zod
-Background:    BullMQ + Redis
-Email:         Resend / SendGrid
+Background:    BullMQ + Redis (persistent, Upstash)
+Email:         Resend + Safe Send Gate
 Storage:       S3/R2 (documents, reports)
+Support:       Lightweight ticketing (2-table MVP)
 ```
+
+### Operations Kernel (NEW - Critical)
+```
+Service:       Node.js + Hono
+Purpose:       Permissioned tool endpoints, audit logging, human approval gates
+Queues:        BullMQ with Redis persistence (Upstash)
+Key Queues:    email, embedding, webhook, notification, approval, publish
+Idempotency:   jobId = hash(action + entityId + version)
+Compliance:    Approval queue (membership/fund verification), Publish queue (news/announcements)
+```
+
+**Why Hono over tRPC for kernel:**
+- Lighter weight for permissioned endpoints
+- Better for audit logging middleware
+- Simpler to secure
+- tRPC still used for main app API
 
 **Alternative: Python Backend**
 ```

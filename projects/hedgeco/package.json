@@ -1,0 +1,29 @@
+{
+  "name": "hedgeco-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo start",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "db:generate": "cd packages/db && npm run generate",
+    "db:migrate": "cd packages/db && npm run migrate",
+    "db:seed": "cd packages/db && npm run seed",
+    "db:studio": "cd packages/db && npm run studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.6.3"
+  },
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

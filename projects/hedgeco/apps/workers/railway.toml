@@ -1,0 +1,18 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm start"
+replicas = 3
+
+[environment]
+NODE_ENV = "production"
+
+[variables]
+REDIS_HOST = "redis-host.upstash.io"
+REDIS_PORT = "6379"
+REDIS_PASSWORD = "${REDIS_PASSWORD}"
+DATABASE_URL = "${DATABASE_URL}"
+RESEND_API_KEY = "${RESEND_API_KEY}"
+OPENAI_API_KEY = "${OPENAI_API_KEY}"

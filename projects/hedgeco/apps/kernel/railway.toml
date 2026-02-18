@@ -1,0 +1,19 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+[environment]
+NODE_ENV = "production"
+PORT = "3001"
+
+[variables]
+REDIS_HOST = "redis-host.upstash.io"
+REDIS_PORT = "6379"
+REDIS_PASSWORD = "${REDIS_PASSWORD}"
+API_KEYS = "${API_KEYS}"
+ALLOWED_ORIGINS = "https://hedgeco.net,https://www.hedgeco.net,https://staging.hedgeco.net"

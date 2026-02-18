@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* HedgeCo.Net Exact Replication - From staging.hedgeco.net */
+    --background: 210 40% 98%; /* hedgeco-light: #f8fafc */
+    --foreground: 222 47% 11%; /* hedgeco-text-dark: #1e293b */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 40%; /* hedgeco-blue: #1e40af */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 40%;
+    --chart-1: 221 83% 40%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-hedgeco-sans;
+  }
+  
+  /* HedgeCo specific styles */
+  .hedgeco-gradient {
+    @apply bg-gradient-to-br from-hedgeco-blue-dark via-hedgeco-blue to-hedgeco-cyan;
+  }
+  
+  .hedgeco-card {
+    @apply bg-hedgeco-white border border-hedgeco-border rounded-lg shadow-sm transition-all duration-200 hover:border-hedgeco-blue-light hover:shadow-lg;
+  }
+  
+  .hedgeco-button-primary {
+    @apply bg-gradient-to-r from-hedgeco-blue to-hedgeco-blue-light text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 hover:from-hedgeco-blue-dark hover:to-hedgeco-blue hover:shadow-lg hover:-translate-y-0.5;
+  }
+  
+  .hedgeco-button-secondary {
+    @apply border border-hedgeco-border bg-hedgeco-white text-hedgeco-text font-semibold py-2 px-6 rounded-lg transition-all duration-200 hover:border-hedgeco-blue-light hover:text-hedgeco-blue hover:shadow-sm;
+  }
+  
+  .hedgeco-text-gradient {
+    @apply bg-gradient-to-r from-hedgeco-blue-light to-hedgeco-cyan bg-clip-text text-transparent;
+  }
+  
+  .hedgeco-section-padding {
+    @apply py-12 md:py-20;
+  }
+  
+  .hedgeco-container {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}

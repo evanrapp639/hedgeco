@@ -1,0 +1,96 @@
+
+/* HedgeCo.Net Design System - Exact replication of staging.hedgeco.net */
+
+:root {
+  /* Primary Colors */
+  --hedgeco-blue-dark: #0f1a3d;
+  --hedgeco-blue: #1e40af;
+  --hedgeco-blue-light: #3b82f6;
+  --hedgeco-cyan: #06b6d4;
+  
+  /* Background Colors */
+  --hedgeco-dark: #0f172a;
+  --hedgeco-light: #f8fafc;
+  --hedgeco-white: #ffffff;
+  
+  /* Text Colors */
+  --hedgeco-text-dark: #1e293b;
+  --hedgeco-text: #475569;
+  --hedgeco-text-light: #64748b;
+  
+  /* Accent Colors */
+  --hedgeco-green: #10b981;
+  --hedgeco-purple: #8b5cf6;
+  --hedgeco-orange: #f97316;
+  --hedgeco-red: #ef4444;
+  
+  /* Border Colors */
+  --hedgeco-border: #e2e8f0;
+  --hedgeco-border-dark: #cbd5e1;
+  
+  /* Typography */
+  --hedgeco-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --hedgeco-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+  
+  /* Spacing */
+  --hedgeco-spacing-xs: 0.25rem;
+  --hedgeco-spacing-sm: 0.5rem;
+  --hedgeco-spacing-md: 1rem;
+  --hedgeco-spacing-lg: 1.5rem;
+  --hedgeco-spacing-xl: 2rem;
+  --hedgeco-spacing-2xl: 3rem;
+  
+  /* Border Radius */
+  --hedgeco-radius-sm: 0.25rem;
+  --hedgeco-radius: 0.5rem;
+  --hedgeco-radius-lg: 0.75rem;
+  --hedgeco-radius-xl: 1rem;
+  
+  /* Shadows */
+  --hedgeco-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --hedgeco-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --hedgeco-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --hedgeco-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Utility Classes */
+.bg-hedgeco-gradient {
+  background: linear-gradient(135deg, var(--hedgeco-blue-dark) 0%, var(--hedgeco-blue) 50%, var(--hedgeco-cyan) 100%);
+}
+
+.text-hedgeco-gradient {
+  background: linear-gradient(135deg, var(--hedgeco-blue-light) 0%, var(--hedgeco-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Component Styles */
+.hedgeco-card {
+  background: var(--hedgeco-white);
+  border: 1px solid var(--hedgeco-border);
+  border-radius: var(--hedgeco-radius-lg);
+  box-shadow: var(--hedgeco-shadow);
+  transition: all 0.2s ease;
+}
+
+.hedgeco-card:hover {
+  border-color: var(--hedgeco-blue-light);
+  box-shadow: var(--hedgeco-shadow-lg);
+}
+
+.hedgeco-button-primary {
+  background: linear-gradient(135deg, var(--hedgeco-blue) 0%, var(--hedgeco-blue-light) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--hedgeco-radius);
+  padding: var(--hedgeco-spacing-sm) var(--hedgeco-spacing-xl);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.hedgeco-button-primary:hover {
+  background: linear-gradient(135deg, var(--hedgeco-blue-dark) 0%, var(--hedgeco-blue) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--hedgeco-shadow-lg);
+}

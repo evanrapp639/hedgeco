@@ -1,0 +1,17 @@
+{
+  "name": "@hedgeco/shared",
+  "version": "0.1.0",
+  "description": "Shared types, schemas, and utilities for HedgeCo.Net",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
