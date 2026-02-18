@@ -7,6 +7,11 @@ const nextConfig = {
   
   // Enable standalone output for Docker deployments
   output: 'standalone',
+  
+  // Disable Turbopack for production builds to avoid issues
+  experimental: {
+    turbo: undefined,
+  },
 
   // Security headers configuration
   // Note: Additional headers are set via middleware.ts
