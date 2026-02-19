@@ -139,7 +139,7 @@ const newsArticles = [
   },
 ];
 
-export default function Home() {
+export default function HomePage() {
   // Fetch featured funds from API
   const { data: featuredData } = trpc.fund.getFeatured.useQuery({ limit: 3 });
   const featuredFunds = featuredData || [];
