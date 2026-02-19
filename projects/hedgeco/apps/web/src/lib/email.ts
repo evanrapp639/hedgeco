@@ -623,7 +623,7 @@ import {
   InvestorManagerRegistrationEmail,
   ServiceProviderRegistrationEmail,
   NewsMemberRegistrationEmail,
-} from './templates/registration';
+} from './email/templates/registration';
 
 /**
  * Send investor or fund manager registration autoresponder
