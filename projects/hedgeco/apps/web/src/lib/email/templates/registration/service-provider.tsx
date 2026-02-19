@@ -220,5 +220,3 @@ export const ServiceProviderRegistrationEmail: React.FC<ServiceProviderRegistrat
     </html>
   );
 };
-
-export { ServiceProviderRegistrationEmail };
