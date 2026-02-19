@@ -188,7 +188,7 @@ test.describe('Admin Dashboard', () => {
       await expect(userTable.or(page.getByText(/email|name|role/i).first())).toBeVisible();
     });
 
-    test('should have pagination controls', async ({ page }) => {
+    test('should have pagination controls', async ({ page }: { page: any }) => {
       const adminEmail = process.env.TEST_ADMIN_EMAIL;
       if (!adminEmail) {
         test.skip();
@@ -212,7 +212,7 @@ test.describe('Admin Dashboard', () => {
       expect(true).toBeTruthy(); // Page loaded successfully
     });
 
-    test('should have search/filter functionality', async ({ page }) => {
+    test('should have search/filter functionality', async ({ page }: { page: any }) => {
       const adminEmail = process.env.TEST_ADMIN_EMAIL;
       if (!adminEmail) {
         test.skip();
@@ -229,7 +229,7 @@ test.describe('Admin Dashboard', () => {
       await expect(searchInput).toBeVisible();
     });
 
-    test('should filter users by search term', async ({ page }) => {
+    test('should filter users by search term', async ({ page }: { page: any }) => {
       const adminEmail = process.env.TEST_ADMIN_EMAIL;
       if (!adminEmail) {
         test.skip();
@@ -253,7 +253,7 @@ test.describe('Admin Dashboard', () => {
       expect(true).toBeTruthy();
     });
 
-    test('should have role filter', async ({ page }) => {
+    test('should have role filter', async ({ page }: { page: any }) => {
       const adminEmail = process.env.TEST_ADMIN_EMAIL;
       if (!adminEmail) {
         test.skip();

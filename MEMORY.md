@@ -41,10 +41,25 @@
 
 **Timeline estimate:** 30-42 weeks
 
-**Sprint 1:** ✅ COMPLETE (2026-02-16)
-- Full Prisma schema, auth system, 8 pages, builds clean
+**Sprint 8:** ✅ COMPLETE (2026-02-17)
+- Scheduled reports, email campaigns, bulk exports
+- Customizable dashboard with drag-drop widgets
+- Docker + CI/CD + health monitoring
+- Deployed to Vercel: https://hedgeco.vercel.app
 
-**Next:** Sprint 2 — tRPC API, connect frontend forms, AI search
+**Sprint 9:** In Progress (matching original site exactly)
+- ✅ Email templates captured and analyzed (4 user types)
+- ✅ Email system updated to match staging exactly (subjects, content, formatting)
+- ⏳ Need to implement exact registration flow with admin approval
+- ⏳ Match colors, logos, and sections to staging.hedgeco.net
+- ⏳ Add SPV section, fix footer tabs, add Hedgecuation
+
+**Email System Updates (2026-02-19):**
+- **Service Provider Template**: Subject "HedgeCo.Net - Service Provider Listing", phone +1 (561) 835-8690 for immediate confirmation
+- **Investor Template**: Subject "Investor Welcome to HedgeCo.Net", fixed {{firstName}} bug
+- **Fund Manager Template**: Subject "Manager Welcome to HedgeCo.Net DD-MM-YYYY", fixed {{firstName}} bug
+- **News Member Template**: Subject "News Member", simple activation flow
+- Registration flow already implemented with admin notifications to support@hedgeco.net
 
 ---
 
@@ -53,4 +68,4 @@
 
 ---
 
-*Last updated: 2026-02-16*
+*Last updated: 2026-02-19*

@@ -633,9 +633,12 @@ export async function sendInvestorManagerRegistrationEmail(
   type: 'investor' | 'manager',
   confirmUrl: string
 ): Promise<EmailResult> {
+  const today = new Date();
+  const formattedDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+  
   const subject = type === 'investor' 
-    ? 'Welcome to HedgeCo.Net - Investor Registration'
-    : 'Welcome to HedgeCo.Net - Fund Manager Registration';
+    ? 'Investor Welcome to HedgeCo.Net'
+    : `Manager Welcome to HedgeCo.Net ${formattedDate}`;
 
   const html = await render(
     InvestorManagerRegistrationEmail({
@@ -672,7 +675,7 @@ export async function sendServiceProviderRegistrationEmail(
 
   return sendEmail({
     to: user.email,
-    subject: 'Your HedgeCo.Net Service Provider Application',
+    subject: 'HedgeCo.Net - Service Provider Listing',
     html,
     from: 'HedgeCo.Net Support <support@hedgeco.net>',
     replyTo: 'support@hedgeco.net',
@@ -696,7 +699,7 @@ export async function sendNewsMemberRegistrationEmail(
 
   return sendEmail({
     to: user.email,
-    subject: '[HedgeCo.Net] Please confirm your registration',
+    subject: 'News Member',
     html,
     from: 'HedgeCo.Net Support <support@hedgeco.net>',
     replyTo: 'support@hedgeco.net',

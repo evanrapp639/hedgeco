@@ -171,13 +171,12 @@ export const ServiceProviderRegistrationEmail: React.FC<ServiceProviderRegistrat
               HedgeCo.Net will notify you by email that your account has been approved.
             </p>
 
-            <div className="contact-info">
-              <p style="margin: 0 0 10px;"><strong>Thank you for using HedgeCo.Net.</strong></p>
-              <p style="margin: 5px 0;">The HedgeCo™ Team</p>
-              <p style="margin: 5px 0;">P: (561) 295-3709</p>
-              <p style="margin: 5px 0;">@: support@hedgeco.net</p>
-              <p style="margin: 5px 0;">W: www.hedgeco.net</p>
-            </div>
+              <p>Thank you for using HedgeCo.Net.</p>
+
+            <p>The HedgeCo™ Team<br />
+            P: (561) 295-3709<br />
+            @: support@hedgeco.net<br />
+            W: www.hedgeco.net</p>
           </div>
 
           <div className="footer">

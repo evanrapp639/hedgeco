@@ -32,6 +32,9 @@ import {
   Activity,
   Clock,
   User,
+  Award,
+  X,
+  Check,
 } from "lucide-react";
 import { OptimizedAvatar } from "@/components/ui/optimized-avatar";
 
@@ -129,6 +132,15 @@ export default function UserDetailPage({
 
   const handleStatusAction = async (action: "activate" | "suspend" | "lock") => {
     await updateStatus.mutateAsync({ userId: user.id, action });
+  };
+
+  const handleAccreditedAction = async (action: "approve" | "reject") => {
+    if (action === "approve") {
+      await trpc.admin.approveAccreditedStatus.mutate({ userId: user.id, notes: "Approved by admin" });
+    } else {
+      await trpc.admin.rejectAccreditedStatus.mutate({ userId: user.id, notes: "Rejected by admin" });
+    }
+    refetch();
   };
 
   const handleDelete = async () => {
@@ -370,6 +382,51 @@ export default function UserDetailPage({
                     <div className="font-medium">
                       {user.emailVerified ? formatDate(user.emailVerified) : "Not verified"}
                     </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Award className="h-4 w-4 text-slate-400" />
+                  <div>
+                    <div className="text-sm text-slate-500">Accredited Status</div>
+                    <div className="font-medium flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={
+                          user.accreditedStatus === 'APPROVED'
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : user.accreditedStatus === 'REJECTED'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }
+                      >
+                        {user.accreditedStatus}
+                      </Badge>
+                      {user.accreditedStatus === 'PENDING' && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-green-600 border-green-200 hover:bg-green-50"
+                            onClick={() => handleAccreditedAction('approve')}
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => handleAccreditedAction('reject')}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {user.accreditedChangedAt && (
+                      <div className="text-xs text-slate-500 mt-1">
+                        Updated {formatDate(user.accreditedChangedAt, true)}
+                      </div>
+                    )}
                   </div>
                 </div>
                 {user.locked && user.lockedReason && (

@@ -17,6 +17,7 @@ import {
   UserPlus,
   FileCheck,
   Eye,
+  Award,
 } from "lucide-react";
 
 function StatCard({
@@ -218,6 +219,44 @@ export default function AdminDashboard() {
                     </Link>
                   </Button>
                 )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Accredited Approvals */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-amber-600" />
+              Pending Accredited Approvals
+            </CardTitle>
+            <CardDescription>Users awaiting accredited investor status approval</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats?.users.pendingApproval === 0 ? (
+              <div className="text-center py-4 text-slate-500">
+                No pending accredited approvals
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50">
+                  <div>
+                    <div className="font-medium text-sm">Accredited Status Reviews</div>
+                    <div className="text-xs text-slate-500">
+                      Users who have verified email and need accredited approval
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-amber-600 border-amber-300">
+                    {stats?.users.pendingApproval || 0} pending
+                  </Badge>
+                </div>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/admin/users?accreditedStatus=PENDING">
+                    Review Pending Accredited Approvals
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
             )}
           </CardContent>

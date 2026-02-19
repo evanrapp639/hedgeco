@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { 
+import {
   Menu, 
   Search, 
   User, 
@@ -18,7 +18,9 @@ import {
   Newspaper,
   Building2,
   Calendar,
-  Info
+  Info,
+  Briefcase,
+  GraduationCap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationDropdown } from "@/components/notifications";
@@ -41,6 +43,8 @@ const navLinks = [
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/providers", label: "Service Providers", icon: Building2 },
   { href: "/conferences", label: "Conferences", icon: Calendar },
+  { href: "/spv", label: "SPV", icon: Briefcase },
+  { href: "/hedgecuation", label: "Hedgecuation", icon: GraduationCap },
   { href: "/about", label: "About", icon: Info },
 ];
 
@@ -65,9 +69,9 @@ export function Header() {
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <div className="h-10 w-10 flex items-center justify-center">
-                  <img 
-                    src="/assets/logo.svg" 
-                    alt="HedgeCo.Net Logo" 
+                  <img
+                    src="/assets/logo.svg"
+                    alt="HedgeCo.Net Logo"
                     className="h-8 w-8"
                   />
                 </div>
@@ -79,32 +83,32 @@ export function Header() {
 
               {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center space-x-8">
-                <Link 
-                  href="/dashboard" 
+                <Link
+                  href="/dashboard"
                   className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  href="/funds" 
+                <Link
+                  href="/funds"
                   className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Funds
                 </Link>
-                <Link 
-                  href="/news" 
+                <Link
+                  href="/news"
                   className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   News
                 </Link>
-                <Link 
-                  href="/messages" 
+                <Link
+                  href="/messages"
                   className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Messages
                 </Link>
-                <Link 
-                  href="/reports" 
+                <Link
+                  href="/reports"
                   className="text-sm font-semibold text-hedgeco-text-dark hover:text-hedgeco-primary transition-colors"
                 >
                   Reports
@@ -114,8 +118,8 @@ export function Header() {
               {/* Right Side Actions */}
               <div className="flex items-center space-x-4">
                 {/* Search */}
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   className="text-hedgeco-text-light hover:text-hedgeco-primary"
                 >
@@ -199,9 +203,9 @@ export function Header() {
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
               <div className="h-10 w-10 flex items-center justify-center">
-                <img 
-                  src="/assets/logo.svg" 
-                  alt="HedgeCo.Net Logo" 
+                <img
+                  src="/assets/logo.svg"
+                  alt="HedgeCo.Net Logo"
                   className="h-8 w-8"
                 />
               </div>
@@ -227,8 +231,8 @@ export function Header() {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               {/* Search Button */}
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 className="hidden md:flex text-hedgeco-text-light hover:text-hedgeco-primary"
               >
@@ -237,14 +241,14 @@ export function Header() {
 
               {/* Auth Buttons */}
               <div className="flex items-center space-x-3">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="text-hedgeco-text hover:text-hedgeco-primary hidden md:inline-flex"
                   asChild
                 >
                   <Link href="/login">Login</Link>
                 </Button>
-                <Button 
+                <Button
                   className="hedgeco-button-primary"
                   asChild
                 >
@@ -255,8 +259,8 @@ export function Header() {
               {/* Mobile Menu Button */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className="lg:hidden text-hedgeco-text-light hover:text-hedgeco-primary"
                   >
@@ -299,26 +303,26 @@ export function Header() {
           <div className="hedgeco-container">
             <div className="flex items-center justify-between py-3">
               <div className="flex space-x-6 overflow-x-auto">
-                <Link 
-                  href="/funds" 
+                <Link
+                  href="/funds"
                   className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Funds
                 </Link>
-                <Link 
-                  href="/news" 
+                <Link
+                  href="/news"
                   className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   News
                 </Link>
-                <Link 
-                  href="/providers" 
+                <Link
+                  href="/providers"
                   className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Providers
                 </Link>
-                <Link 
-                  href="/conferences" 
+                <Link
+                  href="/conferences"
                   className="text-sm font-medium text-hedgeco-text hover:text-hedgeco-primary whitespace-nowrap"
                 >
                   Conferences

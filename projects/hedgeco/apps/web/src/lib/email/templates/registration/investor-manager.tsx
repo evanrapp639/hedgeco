@@ -148,7 +148,7 @@ export const InvestorManagerRegistrationEmail: React.FC<InvestorManagerRegistrat
         </div>
 
         <div className="content">
-          <p>Hi ${firstName},</p>
+          <p>Hi ${firstName || 'there'},</p>
 
           <p>
             Thank you for registering with HedgeCo.Net, the platform built to connect 

@@ -19,6 +19,8 @@ const footerLinks = {
     { href: "/news", label: "Hedge News" },
     { href: "/providers", label: "Service Providers" },
     { href: "/conferences", label: "Conferences" },
+    { href: "/spv", label: "SPV" },
+    { href: "/hedgecuation", label: "Hedgecuation" },
     { href: "/reports", label: "Market Reports" },
     { href: "/research", label: "Research Tools" },
   ],
