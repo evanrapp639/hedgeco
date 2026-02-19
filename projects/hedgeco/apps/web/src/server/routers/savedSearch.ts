@@ -431,7 +431,8 @@ export const savedSearchRouter = router({
       // Generate unique name
       let finalName = newName || `${original.name} (copy)`;
       let counter = 1;
-      while (true) {
+      const maxAttempts = 100; // Safety limit
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const exists = await ctx.prisma.savedSearch.findFirst({
           where: {
             userId,
