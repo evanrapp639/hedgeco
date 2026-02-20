@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd apps/web && npm install --legacy-peer-deps && npx prisma generate && npm run build",
+  "devCommand": "cd apps/web && npm run dev",
+  "installCommand": "cd apps/web && npm install --legacy-peer-deps",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_APP_URL": "https://hedgeco.vercel.app"
+  }
+}
