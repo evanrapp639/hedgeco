@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd apps/web && npm install --legacy-peer-deps && npx prisma generate && npm run build",
+  "buildCommand": "npm run vercel-build",
   "devCommand": "cd apps/web && npm run dev",
-  "installCommand": "cd apps/web && npm install --legacy-peer-deps",
+  "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "regions": ["iad1"],
