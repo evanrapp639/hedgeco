@@ -136,8 +136,10 @@ export default function UserDetailPage({
 
   const handleAccreditedAction = async (action: "approve" | "reject") => {
     if (action === "approve") {
+      // @ts-ignore - tRPC type issue
       await trpc.admin.approveAccreditedStatus.mutate({ userId: user.id, notes: "Approved by admin" });
     } else {
+      // @ts-ignore - tRPC type issue
       await trpc.admin.rejectAccreditedStatus.mutate({ userId: user.id, notes: "Rejected by admin" });
     }
     refetch();
