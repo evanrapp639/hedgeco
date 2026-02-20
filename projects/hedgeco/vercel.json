@@ -5,6 +5,10 @@
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "github": {
+    "enabled": true,
+    "silent": true
+  },
   "env": {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_APP_URL": "https://hedgeco.vercel.app"
