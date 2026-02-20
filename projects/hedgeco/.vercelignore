@@ -1,0 +1,10 @@
+# Ignore everything except what's needed for the web app
+*
+!apps/web/
+!packages/db/
+!package.json
+!turbo.json
+!vercel.json
+!.vercelignore
+!apps/web/**
+!packages/db/**
