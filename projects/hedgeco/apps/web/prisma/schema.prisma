@@ -23,6 +23,7 @@ model User {
 
   // Status
   emailVerified DateTime?
+  emailVerificationToken String?  // For email confirmation links
   active        Boolean   @default(true)
   locked        Boolean   @default(false)
   lockedAt      DateTime?
@@ -1016,6 +1017,8 @@ enum AuditAction {
   EXPORT
   PERMISSION_CHANGE
   SETTINGS_CHANGE
+  NEWS_MEMBER_ACTIVATED
+  EMAIL_CONFIRMED
 }
 
 // ============================================================

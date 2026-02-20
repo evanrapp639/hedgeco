@@ -153,9 +153,9 @@ export const ServiceProviderRegistrationEmail: React.FC<ServiceProviderRegistrat
             </p>
 
             <div className="info-box">
-              <p style="margin: 0 0 10px;"><strong>Your Account Information:</strong></p>
-              <p style="margin: 5px 0;"><strong>Username:</strong> {email}</p>
-              <p style="margin: 5px 0;"><strong>Password:</strong> **********</p>
+              <p style={{margin: "0 0 10px"}}><strong>Your Account Information:</strong></p>
+              <p style={{margin: "5px 0"}}><strong>Username:</strong> {email}</p>
+              <p style={{margin: "5px 0"}}><strong>Password:</strong> **********</p>
             </div>
 
             <p>
@@ -180,11 +180,11 @@ export const ServiceProviderRegistrationEmail: React.FC<ServiceProviderRegistrat
           </div>
 
           <div className="footer">
-            <div style="margin-bottom: 15px;">
-              <div style="font-weight: bold; color: #1a365d; margin-bottom: 5px;">
+            <div style={{marginBottom: "15px"}}>
+              <div style={{fontWeight: "bold", color: "#1a365d", marginBottom: "5px"}}>
                 [HC Logo] HedgeCo.Net
               </div>
-              <p style="margin: 0; font-size: 11px; color: #666;">
+              <p style={{margin: "0", fontSize: "11px", color: "#666"}}>
                 The world's largest independent alternative investments database 
                 connecting accredited investors since 2002
               </p>
@@ -207,11 +207,11 @@ export const ServiceProviderRegistrationEmail: React.FC<ServiceProviderRegistrat
             </div>
 
             <div className="credits">
-              <p style="margin: 5px 0;">
+              <p style={{margin: "5px 0"}}>
                 © {currentYear} HedgeCo.Net. All rights reserved.<br />
                 West Palm Beach, FL | 
-                <a href="https://hedgeco.net/unsubscribe" style="color: #666;">Unsubscribe</a> | 
-                <a href="https://hedgeco.net/privacy" style="color: #666;">Privacy Policy</a>
+                <a href="https://hedgeco.net/unsubscribe" style={{color: "#666"}}>Unsubscribe</a> | 
+                <a href="https://hedgeco.net/privacy" style={{color: "#666"}}>Privacy Policy</a>
               </p>
             </div>
           </div>
